@@ -1,5 +1,5 @@
 # FFMPEGCV is an alternative to OPENCV for video read and write.
-The ffmpegcv provide faster and powerful VideoCapture and VideoWriter to cv2 in python.
+The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2.
 
 - The ffmpegcv is api **compatible** to open-cv 
 - The ffmpegcv can use **GPU accelerate** encoding and decoding. 
@@ -9,11 +9,15 @@ The ffmpegcv provide faster and powerful VideoCapture and VideoWriter to cv2 in 
 
 In all, ffmpegcv is just similar to opencv api. But is faster and with more codecs.
 
+## Install
+> pip install ffmpegcv
+
 ## Video Reader
 ---
 The ffmpegcv is just similar to opencv in api.
 ```python
 # open cv
+import cv2
 cap = cv2.VideoCapture(file)
 while True:
     ret, frame = cap.read()
@@ -22,6 +26,7 @@ while True:
     pass
 
 # ffmpegcv
+import ffmpegcv
 cap = ffmpegcv.VideoCapture(file)
 while True:
     ret, frame = cap.read()
@@ -94,6 +99,7 @@ out.write(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 ## Video Reader and Writer
 ---
 ```python
+import ffmpegcv
 vfile_in = 'A.mp4'
 vfile_out = 'A_h264.mp4'
 vidin = ffmpegcv.VideoCapture(vfile_in)
