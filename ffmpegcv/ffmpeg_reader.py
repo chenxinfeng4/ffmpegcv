@@ -1,7 +1,7 @@
 import numpy as np
-import cv2
+import warnings
 import subprocess
-
+from .video_info import get_info, get_num_NVIDIA_GPUs, decoder_to_nvidia
 
 def run_async(args):
     quiet = True
@@ -28,15 +28,15 @@ class FFmpegReader:
     @staticmethod
     def VideoReader(filename, codec, pix_fmt, resize, resize_keepratio):
         assert pix_fmt in ['rgb24', 'bgr24']
-        vidcv = cv2.VideoCapture(filename)
 
         vid = FFmpegReader()
-        vid.width = int(vidcv.get(cv2.CAP_PROP_FRAME_WIDTH))
-        vid.height = int(vidcv.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        vid.fps = fps = int(vidcv.get(cv2.CAP_PROP_FPS))
-        vid.count = int(vidcv.get(cv2.CAP_PROP_FRAME_COUNT))
+        videoinfo = get_info(filename)
+        vid.width = videoinfo.width
+        vid.height = videoinfo.height
+        vid.fps = fps = videoinfo.fps
+        vid.count = videoinfo.count
         vid.origin_width, vid.origin_height = vid.width, vid.height
-        vidcv.release()
+
         codecopt = '-c:v ' + codec if codec else ''
 
         if resize:
@@ -72,3 +72,55 @@ class FFmpegReader:
     def release(self):
         self.process.terminate()
         self.process.wait()
+
+
+class FFmpegReaderNV(FFmpegReader):
+    @staticmethod
+    def VideoReader(filename, pix_fmt, crop_xywh, resize, resize_keepratio, gpu):
+        assert pix_fmt in ['rgb24', 'bgr24']
+        numGPU = get_num_NVIDIA_GPUs()
+        assert numGPU>0, 'No GPU found'
+        gpu = int(gpu) % numGPU if gpu is not None else 0
+        assert len(resize) == 2, 'resize must be a tuple of (width, height)'
+        videoinfo = get_info(filename)
+        vid = FFmpegReaderNV()
+        vid.origin_width = videoinfo.width
+        vid.origin_height = videoinfo.height
+        vid.fps = videoinfo.fps
+        vid.count = videoinfo.count
+        vid.width, vid.height = vid.origin_width, vid.origin_height
+        vid.codec = videoinfo.codec
+        vid.codecNV = decoder_to_nvidia(vid.codec)
+        
+        if crop_xywh:
+            crop_w, crop_h = crop_xywh[2:]
+            vid.width, vid.height = crop_w, crop_h
+            x, y, w, h = crop_xywh
+            top, bottom, left, right = y, vid.origin_height - (y + h), x, vid.origin_width - (x + w)  #crop length
+            cropopt = f'-crop {top}x{bottom}x{left}x{right}'
+        else:
+            crop_w, crop_h = vid.origin_width, vid.origin_height
+            cropopt = ''
+
+        if resize:
+            vid.width, vid.height = dst_width, dst_height = resize
+            if resize_keepratio:
+                re_width, re_height = crop_w/(crop_h / dst_height) , dst_height
+                if re_width > dst_width:
+                    re_width, re_height = dst_width, crop_h/(crop_w / dst_width)
+                re_width, re_height = int(re_width), int(re_height)
+                scaleopt = f'-vf scale_cuda={re_width}:{re_height},hwdownload,format=nv12'
+                xpading, ypading = (dst_width - re_width) // 2, (dst_height - re_height) // 2
+                padopt = f'pad={dst_width}:{dst_height}:{xpading}:{ypading}:black'
+                filteropt = f'{scaleopt},{padopt}'
+            else:
+                filteropt = f'-vf scale_cuda={dst_width}:{dst_height},hwdownload,format=nv12'
+        else:
+            filteropt = ''
+            
+        args = (f'ffmpeg -hwaccel cuda -hwaccel_device {vid.gpu} -hwaccel_output_format cuda '
+                f' -vcodec {vid.codecNV} {cropopt} -r {vid.fps} -i "{filename}" '
+                f' {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:')
+
+        vid.process = run_async(args)
+        return vid

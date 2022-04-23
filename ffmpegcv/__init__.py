@@ -1,5 +1,5 @@
-from .ffmpeg_reader import FFmpegReader
-from .ffmpeg_writer import FFmpegWriter
+from .ffmpeg_reader import FFmpegReader, FFmpegReaderNV
+from .ffmpeg_writer import FFmpegWriter, FFmpegWriterNV
 
 def VideoCapture(file, 
                  codec=None, 
@@ -54,8 +54,8 @@ def VideoCapture(file,
 
     Use GPU to accelerate decoding
     ```
-    cap_cpu = ffmpegcv.VideoCapture(file, codec='h264')
-    cap_gpu = ffmpegcv.VideoCapture(file, codec='h264_cuvid')
+    cap_cpu = ffmpegcv.VideoCapture(file)
+    cap_gpu = ffmpegcv.VideoCaptureNV(file)
     ```
 
     Use rgb24 instead of bgr24
@@ -103,9 +103,10 @@ def VideoWriter(file,
     fps : number
         Frames per second. Optional. Default is 30.
     frameSize : tuple
-        Frame size. (width, height). Requisite. 
+        Frame size. (width, height). Optional. Default is `None`, which is 
+        decided by the size of the first frame.
     pix_fmt : str
-        Pixel format. ['bgr24' | 'rgb24']. Optional. Default is 'bgr24'.
+        Pixel format of input. ['bgr24' | 'rgb24']. Optional. Default is 'bgr24'.
 
     Examples
     --------
@@ -128,15 +129,20 @@ def VideoWriter(file,
     out.release()
     ```
 
+    frameSize is decided by the size of the first frame
+    ```
+    out = ffmpegcv.VideoWriter('outpy.avi', None, 10)
+    ```
+
     Use GPU to accelerate encoding
     ```
-    out_cpu = ffmpegcv.VideoWriter('outpy.avi', None, 10, (w, h))
-    out_gpu = ffmpegcv.VideoWriter('outpy.avi', 'h264_nvenc', 10, (w, h))
+    out_cpu = ffmpegcv.VideoWriter('outpy.avi', None, 10)
+    out_gpu = ffmpegcv.VideoWriter('outpy.avi', 'h264_nvenc', 10)
     ```
 
     Use rgb24 instead of bgr24
     ```
-    out = ffmpegcv.VideoWriter('outpy.avi', None, 10, (w, h), pix_fmt='rgb24')
+    out = ffmpegcv.VideoWriter('outpy.avi', None, 10, pix_fmt='rgb24')
     out.write(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     ```
 
@@ -144,3 +150,33 @@ def VideoWriter(file,
     """
     return FFmpegWriter.VideoWriter(file, codec, fps, frameSize, pix_fmt)
 
+
+def VideoCaptureNV(file,
+                   pix_fmt='bgr24',
+                   crop_xywh=None,
+                   resize=None,
+                   resize_keepratio=None,
+                   gpu=0):
+    """
+    `ffmpegcv.VideoCaptureNV` is a gpu version for `ffmpegcv.VideoCapture`.
+    """
+    return FFmpegReaderNV.VideoReader(file, pix_fmt, crop_xywh, resize, resize_keepratio, gpu)
+
+
+def VideoReaderNV(*args, **kwargs):
+    """
+     `ffmpegcv.VideoReaderNV` is an alias to `ffmpegcv.VideoCaptureNV`
+    """
+    return VideoReaderNV(*args, **kwargs)
+
+
+def VideoWriterNV(file,
+                  codec=None,
+                  fps=30,
+                  frameSize=None,
+                  pix_fmt='bgr24',
+                  gpu=0):
+    """
+    `ffmpegcv.VideoWriterNV` is a gpu version for `ffmpegcv.VideoWriter`.
+    """
+    return FFmpegWriterNV.VideoWriter(file, codec, pix_fmt, fps, frameSize, gpu)
