@@ -1,9 +1,12 @@
 # %%
-import xml.etree.ElementTree as ET
+import os
+import signal
 import subprocess
 from subprocess import Popen, PIPE
 import re
 from collections import namedtuple
+import xml.etree.ElementTree as ET
+
 
 def get_info(video):
     cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 -show_format -show_streams "{}"'.format(video)
@@ -70,4 +73,21 @@ def decoder_to_nvidia(codec):
         return codec
     else:
         raise Exception('No NV codec found for %s' % codec)
-# %%
+
+
+def run_async(args):
+    quiet = True
+    stderr_stream = subprocess.DEVNULL if quiet else None
+    return subprocess.Popen(
+        args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr_stream, 
+        shell=True, preexec_fn=os.setsid
+    )
+
+
+def release_process(process):
+    try:
+        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+    except:
+        pass
+    process.terminate()
+    process.wait()

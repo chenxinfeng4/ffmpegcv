@@ -1,19 +1,18 @@
 import numpy as np
 import subprocess
 import warnings
-from .video_info import get_num_NVIDIA_GPUs
+import pprint
+from .video_info import run_async, release_process, get_num_NVIDIA_GPUs
 
-def run_async(args):
-    quiet = False
-    stderr_stream = subprocess.DEVNULL if quiet else None
-    return subprocess.Popen(
-        args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr_stream, shell=True
-    )
 
 class FFmpegWriter:
     def __del__(self):
         if hasattr(self, 'process'):
             self.release()
+
+    def __repr__(self):
+        props = pprint.pformat(self.__dict__).replace('{',' ').replace('}',' ')
+        return f'{self.__class__}\n'  + props
 
     @staticmethod
     def VideoWriter(filename, codec, fps, frameSize, pix_fmt):
@@ -42,17 +41,17 @@ class FFmpegWriter:
     def write(self, img):
         if self.waitInit:
             if self.size is None:
-                self.size = img.shape[1], img.shape[0]               
+                self.size = (img.shape[1], img.shape[0])          
             self.width, self.height = self.size
             self._init_video_stream()
             self.waitInit = False
 
-        assert self.size == img.shape[1], img.shape[0]
+        assert self.size == (img.shape[1], img.shape[0])
         img = img.astype(np.uint8).tobytes()
         self.process.stdin.write(img)
 
     def release(self):
-        self.process.stdin.close()
+        self.process.terminate()
         self.process.wait()
 
 
@@ -76,12 +75,16 @@ class FFmpegWriterNV(FFmpegWriter):
             codec = codec + '_nvenc'
         assert codec in ['hevc_nvenc', 'h264_nvenc'], 'codec should be `hevc_nvenc` or `h264_nvenc`'
 
-        vid = super().VideoWriter(filename, codec, fps, frameSize, pix_fmt)
+        vid = FFmpegWriterNV()
+        vid.fps, vid.size = fps, frameSize
+        vid.width, vid.height = vid.size if vid.size else (None, None)
+        vid.codec, vid.pix_fmt, vid.filename = codec, pix_fmt, filename
         vid.gpu = gpu
+        vid.waitInit = True
         return vid
 
     def _init_video_stream(self):
-        args = (f'ffmpeg -y -loglevel warning ' 
+        args = (f'ffmpeg -y -loglevel warning '
             f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
             f'-r {self.fps} -gpu {self.gpu} -c:v {self.codec} -pix_fmt yuv420p "{self.filename}"')
         self.process = run_async(args)

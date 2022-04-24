@@ -1,6 +1,7 @@
 from .ffmpeg_reader import FFmpegReader, FFmpegReaderNV
 from .ffmpeg_writer import FFmpegWriter, FFmpegWriterNV
 
+
 def VideoCapture(file, 
                  codec=None, 
                  pix_fmt='bgr24',
@@ -167,7 +168,7 @@ def VideoReaderNV(*args, **kwargs):
     """
      `ffmpegcv.VideoReaderNV` is an alias to `ffmpegcv.VideoCaptureNV`
     """
-    return VideoReaderNV(*args, **kwargs)
+    return VideoCaptureNV(*args, **kwargs)
 
 
 def VideoWriterNV(file,
@@ -179,4 +180,4 @@ def VideoWriterNV(file,
     """
     `ffmpegcv.VideoWriterNV` is a gpu version for `ffmpegcv.VideoWriter`.
     """
-    return FFmpegWriterNV.VideoWriter(file, codec, pix_fmt, fps, frameSize, gpu)
+    return FFmpegWriterNV.VideoWriter(file, codec, fps, frameSize, pix_fmt, gpu)

@@ -1,17 +1,17 @@
 import numpy as np
 import warnings
+import os
+import signal
 import subprocess
-from .video_info import get_info, get_num_NVIDIA_GPUs, decoder_to_nvidia
-
-def run_async(args):
-    quiet = True
-    stderr_stream = subprocess.DEVNULL if quiet else None
-    return subprocess.Popen(
-        args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr_stream, shell=True
-    )
+import pprint
+from .video_info import run_async, get_info, get_num_NVIDIA_GPUs, decoder_to_nvidia
 
 
 class FFmpegReader:
+    def __repr__(self):
+        props = pprint.pformat(self.__dict__).replace('{',' ').replace('}',' ')
+        return f'{self.__class__}\n'  + props
+    
     def __len__(self):
         return self.count
 
@@ -36,7 +36,8 @@ class FFmpegReader:
         vid.fps = fps = videoinfo.fps
         vid.count = videoinfo.count
         vid.origin_width, vid.origin_height = vid.width, vid.height
-
+        vid.crop_width, vid.crop_height = vid.width, vid.height
+        
         codecopt = '-c:v ' + codec if codec else ''
 
         if resize:
@@ -55,7 +56,8 @@ class FFmpegReader:
         else:
             filteropt = ''
 
-        args = (f'ffmpeg {codecopt} -r {fps} -i "{filename}" '
+        vid.size = (vid.width, vid.height)
+        args = (f'ffmpeg -loglevel warning {codecopt} -r {fps} -i "{filename}" '
                 f'{filteropt} -pix_fmt {pix_fmt} '
                 f'-r {fps} -f rawvideo pipe:')
         vid.process = run_async(args)
@@ -70,6 +72,7 @@ class FFmpegReader:
         return True, img
 
     def release(self):
+        os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
         self.process.terminate()
         self.process.wait()
 
@@ -81,7 +84,7 @@ class FFmpegReaderNV(FFmpegReader):
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU>0, 'No GPU found'
         gpu = int(gpu) % numGPU if gpu is not None else 0
-        assert len(resize) == 2, 'resize must be a tuple of (width, height)'
+        assert resize is None or len(resize) == 2, 'resize must be a tuple of (width, height)'
         videoinfo = get_info(filename)
         vid = FFmpegReaderNV()
         vid.origin_width = videoinfo.width
@@ -102,6 +105,8 @@ class FFmpegReaderNV(FFmpegReader):
             crop_w, crop_h = vid.origin_width, vid.origin_height
             cropopt = ''
 
+        vid.crop_width, vid.crop_height = crop_w, crop_h
+
         if resize:
             vid.width, vid.height = dst_width, dst_height = resize
             if resize_keepratio:
@@ -116,11 +121,12 @@ class FFmpegReaderNV(FFmpegReader):
             else:
                 filteropt = f'-vf scale_cuda={dst_width}:{dst_height},hwdownload,format=nv12'
         else:
-            filteropt = ''
-            
-        args = (f'ffmpeg -hwaccel cuda -hwaccel_device {vid.gpu} -hwaccel_output_format cuda '
+            filteropt = '-vf hwdownload,format=nv12'
+        
+        args = (f'ffmpeg -loglevel warning -hwaccel cuda -hwaccel_device {gpu} -hwaccel_output_format cuda '
                 f' -vcodec {vid.codecNV} {cropopt} -r {vid.fps} -i "{filename}" '
                 f' {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:')
 
         vid.process = run_async(args)
+        vid.size = (vid.width, vid.height)
         return vid
