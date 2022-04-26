@@ -26,7 +26,8 @@ class FFmpegReader:
             raise StopIteration
 
     @staticmethod
-    def VideoReader(filename, codec, pix_fmt, resize, resize_keepratio):
+    def VideoReader(filename, codec, pix_fmt, 
+                    resize, resize_keepratio, resize_keepratioalign):
         assert pix_fmt in ['rgb24', 'bgr24']
 
         vid = FFmpegReader()
@@ -40,7 +41,7 @@ class FFmpegReader:
         
         codecopt = '-c:v ' + codec if codec else ''
 
-        if resize:
+        if resize and resize!=(vid.crop_width, vid.crop_height):
             vid.width, vid.height = dst_width, dst_height = resize
             if resize_keepratio:
                 re_width, re_height = vid.origin_width/(vid.origin_height / dst_height) , dst_height
@@ -48,7 +49,14 @@ class FFmpegReader:
                     re_width, re_height = dst_width, vid.origin_height/(vid.origin_width / dst_width)
                 re_width, re_height = int(re_width), int(re_height)
                 scaleopt = '-vf scale=%d:%d' % (re_width, re_height)
-                xpading, ypading = (dst_width - re_width) // 2, (dst_height - re_height) // 2
+                if resize_keepratioalign is None: resize_keepratioalign = 'center'
+                paddings = {'center': ((dst_width - re_width) // 2, (dst_height - re_height) // 2),
+                            'topleft': (0, 0),
+                            'topright': (dst_width - re_width, 0),
+                            'bottomleft': (0, dst_height - re_height), 
+                            'bottomright': (dst_width - re_width, dst_height - re_height)}
+                assert resize_keepratioalign in paddings, 'resize_keepratioalign must be one of "center"(mmpose), "topleft"(mmdetection), "topright", "bottomleft", "bottomright"'
+                xpading, ypading = paddings[resize_keepratioalign]
                 padopt = f'pad={dst_width}:{dst_height}:{xpading}:{ypading}:black'
                 filteropt = f'{scaleopt},{padopt}'
             else:
@@ -79,7 +87,9 @@ class FFmpegReader:
 
 class FFmpegReaderNV(FFmpegReader):
     @staticmethod
-    def VideoReader(filename, pix_fmt, crop_xywh, resize, resize_keepratio, gpu):
+    def VideoReader(filename, pix_fmt, crop_xywh, 
+                    resize, resize_keepratio, resize_keepratioalign, 
+                    gpu):
         assert pix_fmt in ['rgb24', 'bgr24']
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU>0, 'No GPU found'
@@ -107,7 +117,7 @@ class FFmpegReaderNV(FFmpegReader):
 
         vid.crop_width, vid.crop_height = crop_w, crop_h
 
-        if resize:
+        if resize and resize!=(vid.crop_width, vid.crop_height):
             vid.width, vid.height = dst_width, dst_height = resize
             if resize_keepratio:
                 re_width, re_height = crop_w/(crop_h / dst_height) , dst_height
@@ -115,7 +125,14 @@ class FFmpegReaderNV(FFmpegReader):
                     re_width, re_height = dst_width, crop_h/(crop_w / dst_width)
                 re_width, re_height = int(re_width), int(re_height)
                 scaleopt = f'-vf scale_cuda={re_width}:{re_height},hwdownload,format=nv12'
-                xpading, ypading = (dst_width - re_width) // 2, (dst_height - re_height) // 2
+                if resize_keepratioalign is None: resize_keepratioalign = 'center'
+                paddings = {'center': ((dst_width - re_width) // 2, (dst_height - re_height) // 2),
+                            'topleft': (0, 0),
+                            'topright': (dst_width - re_width, 0),
+                            'bottomleft': (0, dst_height - re_height), 
+                            'bottomright': (dst_width - re_width, dst_height - re_height)}
+                assert resize_keepratioalign in paddings, 'resize_keepratioalign must be one of "center"(mmpose), "topleft"(mmdetection), "topright", "bottomleft", "bottomright"'
+                xpading, ypading = paddings[resize_keepratioalign]
                 padopt = f'pad={dst_width}:{dst_height}:{xpading}:{ypading}:black'
                 filteropt = f'{scaleopt},{padopt}'
             else:

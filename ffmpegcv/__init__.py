@@ -6,7 +6,8 @@ def VideoCapture(file,
                  codec=None, 
                  pix_fmt='bgr24',
                  resize=None,
-                 resize_keepratio=True):
+                 resize_keepratio=True,
+                 resize_keepratioalign='center'):
     """
     Alternative to cv2.VideoCapture
 
@@ -22,6 +23,9 @@ def VideoCapture(file,
         Resize the video to the given size. Optional. Default is `None`.
     resize_keepratio : bool
         Keep the aspect ratio and the border is black. Optional. Default is `True`.
+    resize_keepratioalign : str
+        Align the image to the `center`, `topleft`, `topright`, `bottomleft` or
+        `bottomright`. Optional. Default is 'center'.
 
     Examples
     --------
@@ -77,7 +81,8 @@ def VideoCapture(file,
     Author: Chenxinfeng 2022-04-16, cxf529125853@163.com
     """
     print(file, codec, pix_fmt, resize, resize_keepratio)
-    return FFmpegReader.VideoReader(file, codec, pix_fmt, resize, resize_keepratio)
+    return FFmpegReader.VideoReader(file, codec, pix_fmt, 
+                                    resize, resize_keepratio, resize_keepratioalign)
 
 
 def VideoReader(*args, **kwargs):
@@ -156,12 +161,15 @@ def VideoCaptureNV(file,
                    pix_fmt='bgr24',
                    crop_xywh=None,
                    resize=None,
-                   resize_keepratio=None,
+                   resize_keepratio=True,
+                   resize_keepratioalign='center',
                    gpu=0):
     """
     `ffmpegcv.VideoCaptureNV` is a gpu version for `ffmpegcv.VideoCapture`.
     """
-    return FFmpegReaderNV.VideoReader(file, pix_fmt, crop_xywh, resize, resize_keepratio, gpu)
+    return FFmpegReaderNV.VideoReader(file, pix_fmt, crop_xywh, 
+                                      resize, resize_keepratio, resize_keepratioalign, 
+                                      gpu)
 
 
 def VideoReaderNV(*args, **kwargs):
