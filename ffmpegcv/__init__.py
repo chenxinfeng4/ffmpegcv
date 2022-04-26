@@ -1,5 +1,40 @@
 from .ffmpeg_reader import FFmpegReader, FFmpegReaderNV
 from .ffmpeg_writer import FFmpegWriter, FFmpegWriterNV
+from .video_info import get_num_NVIDIA_GPUs
+import shutil
+from subprocess import Popen, PIPE
+
+
+def _check():
+    if not shutil.which('ffmpeg'):
+        raise RuntimeError('ffmpeg is not installed')
+    if not shutil.which('ffprobe'):
+        raise RuntimeError('ffprobe is not installed')
+
+_check()
+
+_check_nvidia_init = None
+
+def _check_nvidia():
+    global _check_nvidia_init
+    if _check_nvidia_init is None:
+        cmd = 'ffmpeg'
+        p = Popen([cmd], shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate(b"")
+        stderr = stderr.decode('utf-8')
+        p.terminate()
+
+        if ('--enable-cuda-nvcc' not in stderr 
+            or '--enable-cuvid' not in stderr
+            or '--enable-nvenc' not in stderr):
+            raise RuntimeError('The ffmpeg is not compiled with CUDA support')
+
+        if get_num_NVIDIA_GPUs() == 0:
+            raise RuntimeError('No NVIDIA GPU found')
+
+        _check_nvidia_init = True
+
+    return True
 
 
 def VideoCapture(file, 
@@ -167,6 +202,7 @@ def VideoCaptureNV(file,
     """
     `ffmpegcv.VideoCaptureNV` is a gpu version for `ffmpegcv.VideoCapture`.
     """
+    _check_nvidia()
     return FFmpegReaderNV.VideoReader(file, pix_fmt, crop_xywh, 
                                       resize, resize_keepratio, resize_keepratioalign, 
                                       gpu)
@@ -188,4 +224,5 @@ def VideoWriterNV(file,
     """
     `ffmpegcv.VideoWriterNV` is a gpu version for `ffmpegcv.VideoWriter`.
     """
+    _check_nvidia()
     return FFmpegWriterNV.VideoWriter(file, codec, fps, frameSize, pix_fmt, gpu)
