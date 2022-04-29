@@ -1,8 +1,6 @@
 import numpy as np
-import warnings
 import os
 import signal
-import subprocess
 import pprint
 from .video_info import run_async, get_info, get_num_NVIDIA_GPUs, decoder_to_nvidia
 
@@ -26,7 +24,7 @@ class FFmpegReader:
             raise StopIteration
 
     @staticmethod
-    def VideoReader(filename, codec, pix_fmt, 
+    def VideoReader(filename, codec, pix_fmt, crop_xywh,
                     resize, resize_keepratio, resize_keepratioalign):
         assert pix_fmt in ['rgb24', 'bgr24']
 
@@ -37,18 +35,33 @@ class FFmpegReader:
         vid.fps = fps = videoinfo.fps
         vid.count = videoinfo.count
         vid.origin_width, vid.origin_height = vid.width, vid.height
-        vid.crop_width, vid.crop_height = vid.width, vid.height
-        
-        codecopt = '-c:v ' + codec if codec else ''
+        vid.codec = codec if codec else videoinfo.codec
 
-        if resize and resize!=(vid.crop_width, vid.crop_height):
+        if crop_xywh:
+            crop_w, crop_h = crop_xywh[2:]
+            vid.width, vid.height = crop_w, crop_h
+            x, y, w, h = crop_xywh
+            cropopt = f'crop={w}:{h}:{x}:{y}'
+        else:
+            crop_w, crop_h = vid.origin_width, vid.origin_height
+            cropopt = ''
+
+        vid.crop_width, vid.crop_height = crop_w, crop_h
+
+        if resize is None or resize == (vid.crop_width, vid.crop_height):
+            scaleopt = ''
+            padopt = ''
+        else:
             vid.width, vid.height = dst_width, dst_height = resize
-            if resize_keepratio:
-                re_width, re_height = vid.origin_width/(vid.origin_height / dst_height) , dst_height
+            if not resize_keepratio:
+                scaleopt = f'scale={dst_width}x{dst_height}'
+                padopt = ''
+            else:
+                re_width, re_height = crop_w/(crop_h / dst_height) , dst_height
                 if re_width > dst_width:
-                    re_width, re_height = dst_width, vid.origin_height/(vid.origin_width / dst_width)
+                    re_width, re_height = dst_width, crop_h/(crop_w / dst_width)
                 re_width, re_height = int(re_width), int(re_height)
-                scaleopt = '-vf scale=%d:%d' % (re_width, re_height)
+                scaleopt = f'scale={re_width}x{re_height}'
                 if resize_keepratioalign is None: resize_keepratioalign = 'center'
                 paddings = {'center': ((dst_width - re_width) // 2, (dst_height - re_height) // 2),
                             'topleft': (0, 0),
@@ -58,18 +71,21 @@ class FFmpegReader:
                 assert resize_keepratioalign in paddings, 'resize_keepratioalign must be one of "center"(mmpose), "topleft"(mmdetection), "topright", "bottomleft", "bottomright"'
                 xpading, ypading = paddings[resize_keepratioalign]
                 padopt = f'pad={dst_width}:{dst_height}:{xpading}:{ypading}:black'
-                filteropt = f'{scaleopt},{padopt}'
-            else:
-                filteropt = '-vf scale=%d:%d' % (dst_width, dst_height)
+        
+        if any([cropopt, scaleopt, padopt]):
+            filterstr = ','.join(x for x in [cropopt, scaleopt, padopt] if x)
+            filteropt = f'-vf {filterstr}'
         else:
             filteropt = ''
 
-        vid.size = (vid.width, vid.height)
-        args = (f'ffmpeg -loglevel warning {codecopt} -r {fps} -i "{filename}" '
-                f'{filteropt} -pix_fmt {pix_fmt} '
-                f'-r {fps} -f rawvideo pipe:')
+        args = (f'ffmpeg -loglevel warning '
+                f' -vcodec {vid.codec} -r {vid.fps} -i "{filename}" '
+                f' {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:')
+
         vid.process = run_async(args)
+        vid.size = (vid.width, vid.height)
         return vid
+
 
     def read(self):
         in_bytes = self.process.stdout.read(self.height * self.width * 3)
@@ -117,14 +133,20 @@ class FFmpegReaderNV(FFmpegReader):
 
         vid.crop_width, vid.crop_height = crop_w, crop_h
 
-        if resize and resize!=(vid.crop_width, vid.crop_height):
+        if resize is None or resize == (vid.crop_width, vid.crop_height):
+            scaleopt = ''
+            filteropt = ''
+        else:
             vid.width, vid.height = dst_width, dst_height = resize
-            if resize_keepratio:
+            if not resize_keepratio:
+                scaleopt = f'-resize {dst_width}x{dst_height}'
+                filteropt = ''
+            else:
                 re_width, re_height = crop_w/(crop_h / dst_height) , dst_height
                 if re_width > dst_width:
                     re_width, re_height = dst_width, crop_h/(crop_w / dst_width)
                 re_width, re_height = int(re_width), int(re_height)
-                scaleopt = f'-vf scale_cuda={re_width}:{re_height},hwdownload,format=nv12'
+                scaleopt = f'-resize {re_width}x{re_height}'
                 if resize_keepratioalign is None: resize_keepratioalign = 'center'
                 paddings = {'center': ((dst_width - re_width) // 2, (dst_height - re_height) // 2),
                             'topleft': (0, 0),
@@ -134,14 +156,10 @@ class FFmpegReaderNV(FFmpegReader):
                 assert resize_keepratioalign in paddings, 'resize_keepratioalign must be one of "center"(mmpose), "topleft"(mmdetection), "topright", "bottomleft", "bottomright"'
                 xpading, ypading = paddings[resize_keepratioalign]
                 padopt = f'pad={dst_width}:{dst_height}:{xpading}:{ypading}:black'
-                filteropt = f'{scaleopt},{padopt}'
-            else:
-                filteropt = f'-vf scale_cuda={dst_width}:{dst_height},hwdownload,format=nv12'
-        else:
-            filteropt = '-vf hwdownload,format=nv12'
+                filteropt = f'-vf {padopt}'
         
-        args = (f'ffmpeg -loglevel warning -hwaccel cuda -hwaccel_device {gpu} -hwaccel_output_format cuda '
-                f' -vcodec {vid.codecNV} {cropopt} -r {vid.fps} -i "{filename}" '
+        args = (f'ffmpeg -loglevel warning -hwaccel cuda -hwaccel_device {gpu} '
+                f' -vcodec {vid.codecNV} {cropopt} {scaleopt} -r {vid.fps} -i "{filename}" '
                 f' {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:')
 
         vid.process = run_async(args)

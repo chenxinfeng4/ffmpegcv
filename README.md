@@ -57,12 +57,12 @@ ret, frame = cap.read()
 plt.imshow(frame)
 ```
 
-Crop video. (Only supports GPU )
+Crop video.
 ```python
-cap = ffmpegcv.VideoCaptureNV(file, crop_xywh=(0, 0, 640, 480))
+cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480))
 ```
 
-Resize the video to the given size. (GPU or CPU)
+Resize the video to the given size.
 ```python
 cap = ffmpegcv.VideoCapture(file, resize=(640, 480))
 ```
@@ -72,9 +72,9 @@ Resize and keep the aspect ratio with black border padding.
 cap = ffmpegcv.VideoCapture(file, resize=(640, 480), resize_keepratio=True)
 ```
 
-Crop and then resize the video. (Only supports GPU)
+Crop and then resize the video.
 ```python
-cap = ffmpegcv.VideoCaptureNV(file, crop_xywh=(0, 0, 640, 480), resize=(512, 512))
+cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480), resize=(512, 512))
 ```
 
 ## Video Writer

@@ -2,7 +2,7 @@ from .ffmpeg_reader import FFmpegReader, FFmpegReaderNV
 from .ffmpeg_writer import FFmpegWriter, FFmpegWriterNV
 from .video_info import get_num_NVIDIA_GPUs
 import shutil
-from subprocess import Popen, PIPE
+from subprocess import DEVNULL, check_output
 
 
 def _check():
@@ -17,17 +17,15 @@ _check_nvidia_init = None
 
 def _check_nvidia():
     global _check_nvidia_init
+    run = lambda x: check_output(x, shell=True, stderr=DEVNULL)
     if _check_nvidia_init is None:
-        cmd = 'ffmpeg'
-        p = Popen([cmd], shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate(b"")
-        stderr = stderr.decode('utf-8')
-        p.terminate()
+        calling_output = run('ffmpeg -h encoder=hevc_nvenc')
+        if 'AVOptions' not in calling_output.decode('utf-8'):
+            raise RuntimeError('The ffmpeg is not compiled with NVENC support')
 
-        if ('--enable-cuda-nvcc' not in stderr 
-            or '--enable-cuvid' not in stderr
-            or '--enable-nvenc' not in stderr):
-            raise RuntimeError('The ffmpeg is not compiled with CUDA support')
+        calling_output = run('ffmpeg -h decoder=hevc_cuvid')
+        if 'AVOptions' not in calling_output.decode('utf-8'):
+            raise RuntimeError('The ffmpeg is not compiled with NVDEC support')
 
         if get_num_NVIDIA_GPUs() == 0:
             raise RuntimeError('No NVIDIA GPU found')
@@ -40,6 +38,7 @@ def _check_nvidia():
 def VideoCapture(file, 
                  codec=None, 
                  pix_fmt='bgr24',
+                 crop_xywh=None,
                  resize=None,
                  resize_keepratio=True,
                  resize_keepratioalign='center'):
@@ -54,6 +53,8 @@ def VideoCapture(file,
         Codec to use. Optional. Default is `None`.
     pix_fmt : str
         Pixel format. ['bgr24' | 'rgb24']. Optional. Default is 'bgr24'.
+    crop_xywh : tuple
+        Crop the frame. (x, y, width, height). Optional. Default is `None`.
     resize  : tuple
         Resize the video to the given size. Optional. Default is `None`.
     resize_keepratio : bool
@@ -103,6 +104,11 @@ def VideoCapture(file,
     cap = ffmpegcv.VideoCapture(file, pix_fmt='rgb24')
     ```
 
+    Crop video.
+    ```python
+    cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480))
+    ```
+
     Resize the video to the given size
     ```
     cap = ffmpegcv.VideoCapture(file, resize=(640, 480))
@@ -112,11 +118,14 @@ def VideoCapture(file,
     ```
     cap = ffmpegcv.VideoCapture(file, resize=(640, 480), resize_keepratio=True)
     ```
-
+    
+    Crop and then resize the video.
+    ```python
+    cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480), resize=(512, 512))
+    ```
     Author: Chenxinfeng 2022-04-16, cxf529125853@163.com
     """
-    print(file, codec, pix_fmt, resize, resize_keepratio)
-    return FFmpegReader.VideoReader(file, codec, pix_fmt, 
+    return FFmpegReader.VideoReader(file, codec, pix_fmt, crop_xywh,
                                     resize, resize_keepratio, resize_keepratioalign)
 
 
