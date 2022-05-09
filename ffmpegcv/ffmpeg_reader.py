@@ -20,6 +20,7 @@ class FFmpegReader:
         if ret:
             return img
         else:
+            self.release()
             raise StopIteration
 
     @staticmethod
@@ -88,6 +89,7 @@ class FFmpegReader:
     def read(self):
         in_bytes = self.process.stdout.read(self.height * self.width * 3)
         if not in_bytes:
+            self.release()
             return False, None
         img = None
         img = np.frombuffer(in_bytes, np.uint8).reshape([self.height, self.width, 3])

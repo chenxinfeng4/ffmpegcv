@@ -31,8 +31,10 @@ def get_info(video):
 
 def get_num_NVIDIA_GPUs():
     cmd = 'ffmpeg -f lavfi -i nullsrc -c:v h264_nvenc -gpu list -f null -'
-    p = Popen([cmd], shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    p = Popen(cmd.split(), shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate(b"")
+    p.stdin.close()
+    p.stdout.close()
     p.terminate()
     pattern = re.compile(r'GPU #\d+ - < NVIDIA')
     nv_info = pattern.findall(stderr.decode())
@@ -78,17 +80,13 @@ def decoder_to_nvidia(codec):
 def run_async(args):
     quiet = True
     stderr_stream = subprocess.DEVNULL if quiet else None
-    return subprocess.Popen(
-        args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr_stream, 
-        shell=isinstance(args, str), preexec_fn=os.setsid
+    return Popen(
+        args, stdin=PIPE, stdout=PIPE, stderr=stderr_stream, 
+        shell=isinstance(args, str)
     )
 
 
 def release_process(process):
-    # try:
-    #     os.killpg(os.getpgid(process.pid), signal.SIGKILL)
-    # except:
-    #     pass
     process.stdin.close()
     process.stdout.close()
     process.terminate()
