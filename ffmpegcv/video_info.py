@@ -80,14 +80,16 @@ def run_async(args):
     stderr_stream = subprocess.DEVNULL if quiet else None
     return subprocess.Popen(
         args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr_stream, 
-        shell=True, preexec_fn=os.setsid
+        shell=isinstance(args, str), preexec_fn=os.setsid
     )
 
 
 def release_process(process):
-    try:
-        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
-    except:
-        pass
+    # try:
+    #     os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+    # except:
+    #     pass
+    process.stdin.close()
+    process.stdout.close()
     process.terminate()
     process.wait()

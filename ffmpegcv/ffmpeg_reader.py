@@ -1,8 +1,7 @@
 import numpy as np
-import os
-import signal
 import pprint
-from .video_info import run_async, get_info, get_num_NVIDIA_GPUs, decoder_to_nvidia
+from .video_info import (run_async, get_info, get_num_NVIDIA_GPUs, 
+                        decoder_to_nvidia, release_process)
 
 
 class FFmpegReader:
@@ -86,7 +85,6 @@ class FFmpegReader:
         vid.size = (vid.width, vid.height)
         return vid
 
-
     def read(self):
         in_bytes = self.process.stdout.read(self.height * self.width * 3)
         if not in_bytes:
@@ -96,9 +94,7 @@ class FFmpegReader:
         return True, img
 
     def release(self):
-        os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-        self.process.terminate()
-        self.process.wait()
+        release_process(self.process)
 
 
 class FFmpegReaderNV(FFmpegReader):

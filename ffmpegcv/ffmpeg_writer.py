@@ -1,5 +1,4 @@
 import numpy as np
-import subprocess
 import warnings
 import pprint
 from .video_info import run_async, release_process, get_num_NVIDIA_GPUs
@@ -51,8 +50,8 @@ class FFmpegWriter:
         self.process.stdin.write(img)
 
     def release(self):
-        self.process.terminate()
-        self.process.wait()
+        if hasattr(self, 'process'):
+            release_process(self.process)
 
 
 class FFmpegWriterNV(FFmpegWriter):
