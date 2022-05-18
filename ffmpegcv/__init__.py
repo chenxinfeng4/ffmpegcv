@@ -6,10 +6,10 @@ from subprocess import DEVNULL, check_output
 
 
 def _check():
-    if not shutil.which('ffmpeg'):
-        raise RuntimeError('ffmpeg is not installed')
-    if not shutil.which('ffprobe'):
-        raise RuntimeError('ffprobe is not installed')
+    if not shutil.which('ffmpeg') or not shutil.which('ffprobe'):
+        raise RuntimeError('The ffmpeg is not installed. \n\n'
+                           'Please install ffmpeg via:\n    '
+                           'conda install ffmpeg')
 
 _check()
 
@@ -21,14 +21,20 @@ def _check_nvidia():
     if _check_nvidia_init is None:
         calling_output = run('ffmpeg -h encoder=hevc_nvenc')
         if 'AVOptions' not in calling_output.decode('utf-8'):
-            raise RuntimeError('The ffmpeg is not compiled with NVENC support')
+            raise RuntimeError('The ffmpeg is not compiled with NVENC support.\n\n'
+                               'Please re-compile ffmpeg following the instructions at:\n    '
+                               'https://docs.nvidia.com/video-technologies/video-codec-sdk/ffmpeg-with-nvidia-gpu/')
 
         calling_output = run('ffmpeg -h decoder=hevc_cuvid')
         if 'AVOptions' not in calling_output.decode('utf-8'):
-            raise RuntimeError('The ffmpeg is not compiled with NVDEC support')
+            raise RuntimeError('The ffmpeg is not compiled with NVENC support.\n\n'
+                               'Please re-compile ffmpeg following the instructions at:\n    '
+                               'https://docs.nvidia.com/video-technologies/video-codec-sdk/ffmpeg-with-nvidia-gpu/')
 
         if get_num_NVIDIA_GPUs() == 0:
-            raise RuntimeError('No NVIDIA GPU found')
+            raise RuntimeError('No NVIDIA GPU found.\n\n'
+                               'Please use a NVIDIA GPU card listed at:\n    '
+                               'https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new')
 
         _check_nvidia_init = True
 

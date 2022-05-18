@@ -10,7 +10,17 @@ The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which ar
 In all, ffmpegcv is just similar to opencv api. But is faster and with more codecs.
 
 ## Install
+> conda install ffmpeg
+>
 > pip install ffmpegcv
+
+## GPU Accelate
+- Support NVIDIA card only.
+- The **Windows** ffmpeg supports NVIDIA accelerate.
+- The **Linux** ffmpeg didn't orginally support NVIDIA accelerate.
+Please re-compile the ffmpeg by yourself.
+See the [link](https://docs.nvidia.com/video-technologies/video-codec-sdk/ffmpeg-with-nvidia-gpu/)
+- The **MacOS** ffmpeg didn't supports NVIDIA at all.
 
 ## Video Reader
 ---
@@ -121,7 +131,7 @@ import ffmpegcv
 vfile_in = 'A.mp4'
 vfile_out = 'A_h264.mp4'
 vidin = ffmpegcv.VideoCapture(vfile_in)
-vidout = ffmpegcv.VideoWriter(vfile_out, 'h264_nvenc', vidin.fps)
+vidout = ffmpegcv.VideoWriter(vfile_out, vidin.fps)
 
 for frame in vidin:
     vidout.write(frame)

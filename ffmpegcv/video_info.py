@@ -1,6 +1,3 @@
-# %%
-import os
-import signal
 import subprocess
 from subprocess import Popen, PIPE
 import re
@@ -80,9 +77,10 @@ def decoder_to_nvidia(codec):
 def run_async(args):
     quiet = True
     stderr_stream = subprocess.DEVNULL if quiet else None
+    bufsize = -1
     return Popen(
         args, stdin=PIPE, stdout=PIPE, stderr=stderr_stream, 
-        shell=isinstance(args, str)
+        shell=isinstance(args, str), bufsize=bufsize
     )
 
 
