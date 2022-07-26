@@ -1,10 +1,14 @@
 import numpy as np
 import pprint
+import os
 from .video_info import (run_async, get_info, get_num_NVIDIA_GPUs, 
                         decoder_to_nvidia, release_process)
 
 
 class FFmpegReader:
+    def __init__(self):
+        self.iframe = -1
+
     def __repr__(self):
         props = pprint.pformat(self.__dict__).replace('{',' ').replace('}',' ')
         return f'{self.__class__}\n'  + props
@@ -20,23 +24,22 @@ class FFmpegReader:
         if ret:
             return img
         else:
-            self.release()
             raise StopIteration
 
     @staticmethod
     def VideoReader(filename, codec, pix_fmt, crop_xywh,
                     resize, resize_keepratio, resize_keepratioalign):
+        assert os.path.exists(filename) and os.path.isfile(filename), f'{filename} not exists'
         assert pix_fmt in ['rgb24', 'bgr24']
 
         vid = FFmpegReader()
         videoinfo = get_info(filename)
         vid.width = videoinfo.width
         vid.height = videoinfo.height
-        vid.fps = fps = videoinfo.fps
+        vid.fps = videoinfo.fps
         vid.count = videoinfo.count
         vid.origin_width, vid.origin_height = vid.width, vid.height
         vid.codec = codec if codec else videoinfo.codec
-
         if crop_xywh:
             crop_w, crop_h = crop_xywh[2:]
             vid.width, vid.height = crop_w, crop_h
@@ -91,6 +94,7 @@ class FFmpegReader:
         if not in_bytes:
             self.release()
             return False, None
+        self.iframe += 1
         img = None
         img = np.frombuffer(in_bytes, np.uint8).reshape([self.height, self.width, 3])
         return True, img
@@ -100,25 +104,16 @@ class FFmpegReader:
 
 
 class FFmpegReaderNV(FFmpegReader):
-    @staticmethod
-    def VideoReader(filename, pix_fmt, crop_xywh, 
-                    resize, resize_keepratio, resize_keepratioalign, 
-                    gpu):
-        assert pix_fmt in ['rgb24', 'bgr24']
-        numGPU = get_num_NVIDIA_GPUs()
-        assert numGPU>0, 'No GPU found'
-        gpu = int(gpu) % numGPU if gpu is not None else 0
-        assert resize is None or len(resize) == 2, 'resize must be a tuple of (width, height)'
-        videoinfo = get_info(filename)
-        vid = FFmpegReaderNV()
+    def _get_opts(vid, videoinfo, crop_xywh, resize, 
+                  resize_keepratio, resize_keepratioalign):
         vid.origin_width = videoinfo.width
         vid.origin_height = videoinfo.height
         vid.fps = videoinfo.fps
         vid.count = videoinfo.count
         vid.width, vid.height = vid.origin_width, vid.origin_height
         vid.codec = videoinfo.codec
-        vid.codecNV = decoder_to_nvidia(vid.codec)
-        
+        assert vid.origin_height %2 == 0, 'height must be even'
+        assert vid.origin_width %2 == 0, 'width must be even'
         if crop_xywh:
             crop_w, crop_h = crop_xywh[2:]
             vid.width, vid.height = crop_w, crop_h
@@ -155,11 +150,29 @@ class FFmpegReaderNV(FFmpegReader):
                 xpading, ypading = paddings[resize_keepratioalign]
                 padopt = f'pad={dst_width}:{dst_height}:{xpading}:{ypading}:black'
                 filteropt = f'-vf {padopt}'
-        
+
+        vid.size = (vid.width, vid.height)
+        return cropopt, scaleopt, filteropt
+
+    @staticmethod
+    def VideoReader(filename, pix_fmt, crop_xywh, 
+                    resize, resize_keepratio, resize_keepratioalign, 
+                    gpu):
+        assert os.path.exists(filename) and os.path.isfile(filename), f'{filename} not exists'
+        assert pix_fmt in ['rgb24', 'bgr24']
+        numGPU = get_num_NVIDIA_GPUs()
+        assert numGPU>0, 'No GPU found'
+        gpu = int(gpu) % numGPU if gpu is not None else 0
+        assert resize is None or len(resize) == 2, 'resize must be a tuple of (width, height)'
+        videoinfo = get_info(filename)
+        vid = FFmpegReaderNV()
+        cropopt, scaleopt, filteropt = vid._get_opts(videoinfo, crop_xywh, resize, 
+            resize_keepratio, resize_keepratioalign)
+        vid.codecNV = decoder_to_nvidia(vid.codec)
+
         args = (f'ffmpeg -loglevel warning -hwaccel cuda -hwaccel_device {gpu} '
                 f' -vcodec {vid.codecNV} {cropopt} {scaleopt} -r {vid.fps} -i "{filename}" '
                 f' {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:')
 
         vid.process = run_async(args)
-        vid.size = (vid.width, vid.height)
         return vid

@@ -131,7 +131,7 @@ import ffmpegcv
 vfile_in = 'A.mp4'
 vfile_out = 'A_h264.mp4'
 vidin = ffmpegcv.VideoCapture(vfile_in)
-vidout = ffmpegcv.VideoWriter(vfile_out, vidin.fps)
+vidout = ffmpegcv.VideoWriter(vfile_out, None, vidin.fps)
 
 for frame in vidin:
     vidout.write(frame)

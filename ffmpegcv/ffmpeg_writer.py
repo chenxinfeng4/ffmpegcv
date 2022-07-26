@@ -5,6 +5,9 @@ from .video_info import run_async, release_process, get_num_NVIDIA_GPUs
 
 
 class FFmpegWriter:
+    def __init__(self):
+        self.iframe = -1
+
     def __del__(self):
         if hasattr(self, 'process'):
             self.release()
@@ -44,7 +47,8 @@ class FFmpegWriter:
             self.width, self.height = self.size
             self._init_video_stream()
             self.waitInit = False
-
+        
+        self.iframe += 1
         assert self.size == (img.shape[1], img.shape[0])
         img = img.astype(np.uint8).tobytes()
         self.process.stdin.write(img)
