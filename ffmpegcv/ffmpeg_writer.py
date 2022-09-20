@@ -8,9 +8,14 @@ class FFmpegWriter:
     def __init__(self):
         self.iframe = -1
 
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, type, value, traceback):
+        self.release()
+
     def __del__(self):
-        if hasattr(self, 'process'):
-            self.release()
+        self.release()
 
     def __repr__(self):
         props = pprint.pformat(self.__dict__).replace('{',' ').replace('}',' ')
@@ -56,6 +61,9 @@ class FFmpegWriter:
     def release(self):
         if hasattr(self, 'process'):
             release_process(self.process)
+
+    def close(self):
+        return self.release()
 
 
 class FFmpegWriterNV(FFmpegWriter):

@@ -1,7 +1,7 @@
 # FFMPEGCV is an alternative to OPENCV for video read and write.
 The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2.
 
-- The ffmpegcv is api **compatible** to open-cv 
+- The ffmpegcv is api **compatible** to open-cv. 
 - The ffmpegcv can use **GPU accelerate** encoding and decoding. 
 - The ffmpegcv support much more video **codecs** v.s. open-cv.
 - The ffmpegcv support **RGB** & BGR format as you like.
@@ -9,18 +9,31 @@ The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which ar
 
 In all, ffmpegcv is just similar to opencv api. But is faster and with more codecs.
 
+## Basic example
+Read a video by GPU, and rewrite it.
+```python
+vidin = ffmpegcv.VideoCaptureNV(vfile_in)
+vidout = ffmpegcv.VideoWriter(vfile_out, 'h264', vidin.fps)
+
+with vidin, vidout:
+    for frame in vidin:
+        cv2.imshow('image', frame)
+        vidout.write(frame)
+```
+
 ## Install
-> conda install ffmpeg
+You need to download ffmpeg before you can use ffmpegcv
+> conda install ffmpeg 
 >
 > pip install ffmpegcv
 
-## GPU Accelate
+## GPU Accelation
 - Support NVIDIA card only.
-- The **Windows** ffmpeg supports NVIDIA accelerate.
-- The **Linux** ffmpeg didn't orginally support NVIDIA accelerate.
+- Perfect in the **Windows**. That ffmpeg supports NVIDIA acceleration just by conda install.
+- Struggle in the **Linux**. That ffmpeg didn't orginally support NVIDIA accelerate.
 Please re-compile the ffmpeg by yourself.
 See the [link](https://docs.nvidia.com/video-technologies/video-codec-sdk/ffmpeg-with-nvidia-gpu/)
-- The **MacOS** ffmpeg didn't supports NVIDIA at all.
+- Infeasible in the **MacOS**. That ffmpeg didn't supports NVIDIA at all.
 
 ## Video Reader
 ---
@@ -43,12 +56,21 @@ while True:
     if not ret:
         break
     pass
+cap.release()
 
-# alternative, recommand
+# alternative
 cap = ffmpegcv.VideoCapture(file)
 nframe = len(cap)
 for frame in cap:
     pass
+cap.release()
+
+# more pythonic, recommand
+with ffmpegcv.VideoCapture(file) as cap:
+    nframe = len(cap)
+    for iframe, frame in enumerate(cap):
+        if iframe>100: break
+        pass
 ```
 
 Use GPU to accelerate decoding. It depends on the video codes.
@@ -67,7 +89,7 @@ ret, frame = cap.read()
 plt.imshow(frame)
 ```
 
-Crop video.
+Crop video, which will be much faster than read the whole canvas.
 ```python
 cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480))
 ```
@@ -100,16 +122,18 @@ out.write(frame2)
 out.release()
 
 # ffmpegcv, default codec is 'h264' in cpu 'h265' in gpu.
-out = ffmpegcv.VideoWriter('outpy.avi', None, 10, (w, h))
+# frameSize is decided by the size of the first frame
+out = ffmpegcv.VideoWriter('outpy.avi', None, 10)
 out.write(frame1)
 out.write(frame2)
 out.release()
+
+# more pythonic
+with ffmpegcv.VideoWriter('outpy.avi', None, 10) as out:
+    out.write(frame1)
+    out.write(frame2)
 ```
 
-frameSize is decided by the size of the first frame
-```
-out = ffmpegcv.VideoWriter('outpy.avi', None, 10)
-```
 
 Use GPU to accelerate encoding. Such as h264_nvenc, hevc_nvenc.
 ```python
@@ -133,9 +157,7 @@ vfile_out = 'A_h264.mp4'
 vidin = ffmpegcv.VideoCapture(vfile_in)
 vidout = ffmpegcv.VideoWriter(vfile_out, None, vidin.fps)
 
-for frame in vidin:
-    vidout.write(frame)
-
-vidin.release()
-vidout.release()
+with vidin, vidout:
+    for frame in vidin:
+        vidout.write(frame)
 ```

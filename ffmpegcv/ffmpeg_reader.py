@@ -12,7 +12,13 @@ class FFmpegReader:
     def __repr__(self):
         props = pprint.pformat(self.__dict__).replace('{',' ').replace('}',' ')
         return f'{self.__class__}\n'  + props
+
+    def __enter__(self):
+        return self
     
+    def __exit__(self, type, value, traceback):
+        self.release()
+
     def __len__(self):
         return self.count
 
@@ -30,7 +36,7 @@ class FFmpegReader:
     def VideoReader(filename, codec, pix_fmt, crop_xywh,
                     resize, resize_keepratio, resize_keepratioalign):
         assert os.path.exists(filename) and os.path.isfile(filename), f'{filename} not exists'
-        assert pix_fmt in ['rgb24', 'bgr24']
+        assert pix_fmt in ['rgb24', 'bgr24', 'yuv420p']
 
         vid = FFmpegReader()
         videoinfo = get_info(filename)
@@ -87,20 +93,28 @@ class FFmpegReader:
 
         vid.process = run_async(args)
         vid.size = (vid.width, vid.height)
+        vid.pix_fmt = pix_fmt
+        assert (not pix_fmt=='yuv420p') or (vid.height % 2 == 0 and vid.width % 2 == 0), 'yuv420p must be even'
+        vid.out_numpy_shape = {'rgb24': (vid.height, vid.width, 3),
+                            'bgr24': (vid.height, vid.width, 3),
+                            'yuv420p': (int(vid.height * 1.5), vid.width)}[pix_fmt]
         return vid
 
     def read(self):
-        in_bytes = self.process.stdout.read(self.height * self.width * 3)
+        in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
         if not in_bytes:
             self.release()
             return False, None
         self.iframe += 1
         img = None
-        img = np.frombuffer(in_bytes, np.uint8).reshape([self.height, self.width, 3])
+        img = np.frombuffer(in_bytes, np.uint8).reshape(self.out_numpy_shape)
         return True, img
 
     def release(self):
         release_process(self.process)
+
+    def close(self):
+        return self.release()
 
 
 class FFmpegReaderNV(FFmpegReader):
@@ -159,7 +173,7 @@ class FFmpegReaderNV(FFmpegReader):
                     resize, resize_keepratio, resize_keepratioalign, 
                     gpu):
         assert os.path.exists(filename) and os.path.isfile(filename), f'{filename} not exists'
-        assert pix_fmt in ['rgb24', 'bgr24']
+        assert pix_fmt in ['rgb24', 'bgr24', 'yuv420p']
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU>0, 'No GPU found'
         gpu = int(gpu) % numGPU if gpu is not None else 0
@@ -175,4 +189,9 @@ class FFmpegReaderNV(FFmpegReader):
                 f' {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:')
 
         vid.process = run_async(args)
+        vid.pix_fmt = pix_fmt
+        assert (not pix_fmt=='yuv420p') or (vid.height % 2 == 0 and vid.width % 2 == 0), 'yuv420p must be even'
+        vid.out_numpy_shape = {'rgb24': (vid.height, vid.width, 3),
+                            'bgr24': (vid.height, vid.width, 3),
+                            'yuv420p': (int(vid.height * 1.5), vid.width)}[pix_fmt]
         return vid
