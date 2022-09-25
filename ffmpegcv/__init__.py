@@ -1,5 +1,6 @@
 from .ffmpeg_reader import FFmpegReader, FFmpegReaderNV
 from .ffmpeg_writer import FFmpegWriter, FFmpegWriterNV
+from .ffmpeg_reader_camera import FFmpegReaderCAM
 from .video_info import get_num_NVIDIA_GPUs
 import shutil
 from subprocess import DEVNULL, check_output
@@ -135,11 +136,7 @@ def VideoCapture(file,
                                     resize, resize_keepratio, resize_keepratioalign)
 
 
-def VideoReader(*args, **kwargs):
-    """
-     `ffmpegcv.VideoReader` is an alias to `ffmpegcv.VideoCapture`
-    """
-    return VideoCapture(*args, **kwargs)                                                                       
+VideoReader=VideoCapture                                                                 
 
 
 def VideoWriter(file, 
@@ -222,13 +219,7 @@ def VideoCaptureNV(file,
                                       resize, resize_keepratio, resize_keepratioalign, 
                                       gpu)
 
-
-def VideoReaderNV(*args, **kwargs):
-    """
-     `ffmpegcv.VideoReaderNV` is an alias to `ffmpegcv.VideoCaptureNV`
-    """
-    return VideoCaptureNV(*args, **kwargs)
-
+VideoReaderNV = VideoCaptureNV
 
 def VideoWriterNV(file,
                   codec=None,
@@ -241,3 +232,16 @@ def VideoWriterNV(file,
     """
     _check_nvidia()
     return FFmpegWriterNV.VideoWriter(file, codec, fps, frameSize, pix_fmt, gpu)
+
+
+def VideoCaptureCAM(camname="OBS Virtual Camera",
+                    camsize=None,
+                    pix_fmt='bgr24',
+                    crop_xywh=None,
+                    resize=None,
+                    resize_keepratio=True,
+                    resize_keepratioalign='center'):
+    return FFmpegReaderCAM.VideoReader(camname, camsize, pix_fmt, crop_xywh,
+        resize, resize_keepratio, resize_keepratioalign)
+
+VideoReaderCAM = VideoCaptureCAM
