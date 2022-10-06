@@ -100,6 +100,17 @@ class FFmpegReader:
                             'yuv420p': (int(vid.height * 1.5), vid.width)}[pix_fmt]
         return vid
 
+    def read_gray(self):
+        # It's an experimental function
+        # return 'ret, img_gray'
+        # img_gray: Height x Width x 1
+        assert self.pix_fmt in ('nv12', 'yuv420p')
+        ret, img = self.read()
+        if not ret: return False, None
+        assert img.shape==(int(self.height * 1.5), self.width)
+        img_gray = img[:self.height, :, None]
+        return True, img_gray
+
     def read(self):
         in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
         if not in_bytes:
@@ -173,7 +184,7 @@ class FFmpegReaderNV(FFmpegReader):
                     resize, resize_keepratio, resize_keepratioalign, 
                     gpu):
         assert os.path.exists(filename) and os.path.isfile(filename), f'{filename} not exists'
-        assert pix_fmt in ['rgb24', 'bgr24', 'yuv420p']
+        assert pix_fmt in ['rgb24', 'bgr24', 'yuv420p', 'nv12']
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU>0, 'No GPU found'
         gpu = int(gpu) % numGPU if gpu is not None else 0
@@ -193,5 +204,6 @@ class FFmpegReaderNV(FFmpegReader):
         assert (not pix_fmt=='yuv420p') or (vid.height % 2 == 0 and vid.width % 2 == 0), 'yuv420p must be even'
         vid.out_numpy_shape = {'rgb24': (vid.height, vid.width, 3),
                             'bgr24': (vid.height, vid.width, 3),
-                            'yuv420p': (int(vid.height * 1.5), vid.width)}[pix_fmt]
+                            'yuv420p': (int(vid.height * 1.5), vid.width),
+                            'nv12': (int(vid.height * 1.5), vid.width)}[pix_fmt]
         return vid

@@ -51,8 +51,8 @@ class FFmpegReaderCAM:
 
     @staticmethod
     def VideoReader(camname, camsize, pix_fmt, crop_xywh,
-                    resize, resize_keepratio, resize_keepratioalign):
-        assert pix_fmt in ['rgb24', 'bgr24', 'yuv420p']
+                    resize, resize_keepratio, resize_keepratioalign, step=1):
+        assert pix_fmt in ['rgb24', 'bgr24', 'yuv420p', 'nv12']
 
         vid = FFmpegReaderCAM()
         assert len(camsize)==2
@@ -101,7 +101,7 @@ class FFmpegReaderCAM:
 
         args = (f'ffmpeg -loglevel warning '
                 f' -f dshow -video_size {vid.origin_width}x{vid.origin_height} '
-                f' -re -i video="{camname}" '
+                f' -i video="{camname}" '
                 f' {filteropt} -pix_fmt {pix_fmt} -f rawvideo pipe:')
 
         vid.size = (vid.width, vid.height)
@@ -109,26 +109,43 @@ class FFmpegReaderCAM:
         assert (not pix_fmt=='yuv420p') or (vid.height % 2 == 0 and vid.width % 2 == 0), 'yuv420p must be even'
         vid.out_numpy_shape = {'rgb24': (vid.height, vid.width, 3),
                             'bgr24': (vid.height, vid.width, 3),
-                            'yuv420p': (int(vid.height * 1.5), vid.width)}[pix_fmt]
+                            'yuv420p': (int(vid.height * 1.5), vid.width),
+                            'nv12': (int(vid.height * 1.5), vid.width),
+                            }[pix_fmt]
         vid.process = run_async(args)
 
         vid.isopened = True
         
         # producer
-        vid.q = Queue(maxsize=2)
+        assert step>=1 and isinstance(step, int)
+        vid.step=step
+        vid.q = Queue(maxsize=30)
         producer = ProducerThread(vid, vid.q)
         producer.start()
         return vid
 
     def read_(self):
-        in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
+        for i in range(self.step):
+            in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
         if not in_bytes:
             self.release()
             return False, None
+        
         self.iframe += 1
         img = None
         img = np.frombuffer(in_bytes, np.uint8).reshape(self.out_numpy_shape)
         return True, img
+    
+    def read_gray(self):
+        # It's an experimental function
+        # return 'ret, img_gray'
+        # img_gray: Height x Width x 1
+        assert self.pix_fmt in ('nv12', 'yuv420p')
+        ret, img = self.read()
+        if not ret: return False, None
+        assert img.shape==(int(self.height * 1.5), self.width)
+        img_gray = img[:self.height, :, None]
+        return True, img_gray
 
     def read(self):
         ret, img = self.q.get()
@@ -140,4 +157,3 @@ class FFmpegReaderCAM:
 
     def close(self):
         return self.release()
-
