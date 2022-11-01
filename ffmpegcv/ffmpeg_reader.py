@@ -36,7 +36,7 @@ class FFmpegReader:
     def VideoReader(filename, codec, pix_fmt, crop_xywh,
                     resize, resize_keepratio, resize_keepratioalign):
         assert os.path.exists(filename) and os.path.isfile(filename), f'{filename} not exists'
-        assert pix_fmt in ['rgb24', 'bgr24', 'yuv420p']
+        assert pix_fmt in ['rgb24', 'bgr24', 'yuv420p', 'nv12']
 
         vid = FFmpegReader()
         videoinfo = get_info(filename)
@@ -97,6 +97,7 @@ class FFmpegReader:
         assert (not pix_fmt=='yuv420p') or (vid.height % 2 == 0 and vid.width % 2 == 0), 'yuv420p must be even'
         vid.out_numpy_shape = {'rgb24': (vid.height, vid.width, 3),
                             'bgr24': (vid.height, vid.width, 3),
+                            'nv12': (int(vid.height * 1.5), vid.width),
                             'yuv420p': (int(vid.height * 1.5), vid.width)}[pix_fmt]
         return vid
 
