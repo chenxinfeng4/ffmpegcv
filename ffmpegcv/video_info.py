@@ -33,7 +33,7 @@ def get_num_NVIDIA_GPUs():
     p.stdin.close()
     p.stdout.close()
     p.terminate()
-    pattern = re.compile(r'GPU #\d+ - < NVIDIA')
+    pattern = re.compile(r'GPU #\d+ - < ')
     nv_info = pattern.findall(stderr.decode())
     num_gpu = len(nv_info)
     return num_gpu
