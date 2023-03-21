@@ -2,18 +2,19 @@
 The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2.
 
 - The ffmpegcv is api **compatible** to open-cv. 
-- The ffmpegcv can use **GPU accelerate** encoding and decoding. 
+- The ffmpegcv can use **GPU accelerate** encoding and decoding*. 
 - The ffmpegcv support much more video **codecs** v.s. open-cv.
 - The ffmpegcv support **RGB** & BGR format as you like.
-- The ffmpegcv can **resize video** to specific size with/without **padding**.
+- The ffmpegcv can support ROI operations.You can **crop**, **resize** and **pad** the ROI.
 
-In all, ffmpegcv is just similar to opencv api. But is faster and with more codecs.
+In all, ffmpegcv is just similar to opencv api. But is faster* and with more codecs.
+
 
 ## Basic example
-Read a video by GPU, and rewrite it.
+Read a video by CPU, and rewrite it by GPU.
 ```python
-vidin = ffmpegcv.VideoCaptureNV(vfile_in)
-vidout = ffmpegcv.VideoWriter(vfile_out, 'h264', vidin.fps)
+vidin = ffmpegcv.VideoCapture(vfile_in)
+vidout = ffmpegcv.VideoWriterNV(vfile_out, 'h264', vidin.fps)
 
 with vidin, vidout:
     for frame in vidin:
@@ -33,7 +34,24 @@ You need to download ffmpeg before you can use ffmpegcv
 - Struggle in the **Linux**. That ffmpeg didn't orginally support NVIDIA accelerate.
 Please re-compile the ffmpeg by yourself.
 See the [link](https://docs.nvidia.com/video-technologies/video-codec-sdk/ffmpeg-with-nvidia-gpu/)
+- Works in the **Google Colab** notebook without pain (no need to recompile ffmpeg). 
 - Infeasible in the **MacOS**. That ffmpeg didn't supports NVIDIA at all.
+
+> \* The ffmegcv GPU reader is a bit slower than CPU reader, but much faster when use ROI operations (crop, resize, pad).
+
+## Codecs
+
+| Codecs      | OpenCV-reader | ffmpegcv-cpu-r     | gpu-r  | OpenCV-writer | ffmpegcv-cpu-w     | gpu-w  |
+| ----------- | ------------- | ---------------- | ---- | ------------- | ---------------- | ---- |
+| h264        | √             | √                | √    | ×             | √                | √    |
+| h265 (hevc) | not sure      | √                | √    | ×             | √                | √    |
+| mjpeg       | √             | √                | ×    | √             | √                | ×    |
+| mpeg        | √             | √                | ×    | √             | √                | ×    |
+| others      | not sure      | ffmpeg -decoders | ×    | not sure      | ffmpeg -encoders | ×    |
+
+## Benchmark
+*On the way...*
+
 
 ## Video Reader
 ---
@@ -89,22 +107,25 @@ ret, frame = cap.read()
 plt.imshow(frame)
 ```
 
-Crop video, which will be much faster than read the whole canvas.
+### ROI Operations
+You can crop, resize and pad the video. These ROI operation is `ffmpegcv-GPU` > `ffmpegcv-CPU` >> `opencv`.
+
+**Crop** video, which will be much faster than read the whole canvas.
 ```python
 cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480))
 ```
 
-Resize the video to the given size.
+**Resize** the video to the given size.
 ```python
 cap = ffmpegcv.VideoCapture(file, resize=(640, 480))
 ```
 
-Resize and keep the aspect ratio with black border padding.
+**Resize** and keep the aspect ratio with black border **padding**.
 ```python
 cap = ffmpegcv.VideoCapture(file, resize=(640, 480), resize_keepratio=True)
 ```
 
-Crop and then resize the video.
+**Crop** and then **resize** the video.
 ```python
 cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480), resize=(512, 512))
 ```

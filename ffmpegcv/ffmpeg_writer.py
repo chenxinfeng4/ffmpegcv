@@ -1,7 +1,11 @@
 import numpy as np
 import warnings
 import pprint
+import sys
 from .video_info import run_async, release_process, get_num_NVIDIA_GPUs
+
+
+IN_COLAB = 'google.colab' in sys.modules
 
 
 class FFmpegWriter:
@@ -95,7 +99,8 @@ class FFmpegWriterNV(FFmpegWriter):
         return vid
 
     def _init_video_stream(self):
-        self.preset = getattr(self, 'preset', 'p2')
+        default_preset = 'default' if IN_COLAB else 'p2'
+        self.preset = getattr(self, 'preset', default_preset)
         args = (f'ffmpeg -y -loglevel warning '
             f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
             f'-preset {self.preset} '
