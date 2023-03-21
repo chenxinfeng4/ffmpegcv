@@ -144,13 +144,13 @@ out.release()
 
 # ffmpegcv, default codec is 'h264' in cpu 'h265' in gpu.
 # frameSize is decided by the size of the first frame
-out = ffmpegcv.VideoWriter('outpy.avi', None, 10)
+out = ffmpegcv.VideoWriter('outpy.mp4', None, 10)
 out.write(frame1)
 out.write(frame2)
 out.release()
 
 # more pythonic
-with ffmpegcv.VideoWriter('outpy.avi', None, 10) as out:
+with ffmpegcv.VideoWriter('outpy.mp4', None, 10) as out:
     out.write(frame1)
     out.write(frame2)
 ```
@@ -158,14 +158,14 @@ with ffmpegcv.VideoWriter('outpy.avi', None, 10) as out:
 
 Use GPU to accelerate encoding. Such as h264_nvenc, hevc_nvenc.
 ```python
-out_cpu = ffmpegcv.VideoWriter('outpy.avi', None, 10)
-out_gpu0 = ffmpegcv.VideoWriterNV('outpy.avi', 'h264', 10)        #NVIDIA GPU0
-out_gpu1 = ffmpegcv.VideoWriterNV('outpy.avi', 'hevc', 10, gpu=1) #NVIDIA GPU1
+out_cpu = ffmpegcv.VideoWriter('outpy.mp4', None, 10)
+out_gpu0 = ffmpegcv.VideoWriterNV('outpy.mp4', 'h264', 10)        #NVIDIA GPU0
+out_gpu1 = ffmpegcv.VideoWriterNV('outpy.mp4', 'hevc', 10, gpu=1) #NVIDIA GPU1
 ```
 
 Input image is rgb24 instead of bgr24
 ```python
-out = ffmpegcv.VideoWriter('outpy.avi', None, 10, pix_fmt='rgb24')
+out = ffmpegcv.VideoWriter('outpy.mp4', None, 10, pix_fmt='rgb24')
 out.write(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 ```
 
