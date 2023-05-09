@@ -1,10 +1,53 @@
 import numpy as np
 import pprint
-import os
 from .video_info import (run_async, release_process)
-
+import re
+import subprocess
 from threading import Thread
 from queue import Queue
+
+
+def quary_camera_divices() -> dict:
+    command = 'ffmpeg -hide_banner -list_devices true -f dshow -i dummy'
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    dshowliststr = stderr.decode('utf-8')
+    dshowliststr = dshowliststr.split('DirectShow audio devices')[0]
+    pattern = re.compile(r'\[[^\]]*?\]  "([^"]*)"')
+    matches = pattern.findall(dshowliststr)
+    id_device_map = {i:device for i, device in enumerate(matches)}
+    if len(id_device_map)==0:
+        print('No camera divice found')
+    return id_device_map
+
+
+def quary_camera_options(cam_id_name) -> str:
+    if isinstance(cam_id_name, int):
+        id_device_map = quary_camera_divices()
+        camname = id_device_map[cam_id_name]
+    elif isinstance(cam_id_name, str):
+        camname = cam_id_name
+    else:
+        raise ValueError('Not valid camname')
+    command = f'ffmpeg -hide_banner -f dshow -list_options true -i video="{camname}"'
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    dshowliststr = stderr.decode('utf-8').replace('\r\n','\n').replace('\r', '\n')
+    dshowlist = [s for s in dshowliststr.split('\n') if 'fps=' in s]
+    from collections import OrderedDict
+    unique_dshowlist = list(OrderedDict.fromkeys(dshowlist))
+    outlist = []
+    for text in unique_dshowlist:
+        cam_options = dict()
+        cam_options['camcodec'] = re.search(r"vcodec=(\w+)", text).group(1) if 'vcodec' in text else None
+        cam_options['campix_fmt'] = re.search(r"pixel_format=(\w+)", text).group(1) if 'pixel_format' in text else None
+        camsize_wh = re.search(r"min s=(\w+)", text).group(1)
+        cam_options['camsize_wh'] = tuple(int(v) for v in camsize_wh.split('x'))
+        camfps = float(re.search(r"fps=(\w+)", text).group(1))
+        cam_options['camfps'] = int(camfps) if round(camfps)==camfps else camfps
+        outlist.append(cam_options)
+    return outlist
+
 
 class ProducerThread(Thread):
     def __init__(self, vid, q):
@@ -19,7 +62,7 @@ class ProducerThread(Thread):
             ret, img = self.vid.read_()
 
             try:
-                self.q.put_nowait((ret, img)) #give up frames 
+                self.q.put_nowait((ret, img)) #drop frames 
             except Exception:
                 pass
             continue
@@ -50,13 +93,37 @@ class FFmpegReaderCAM:
             raise StopIteration
 
     @staticmethod
-    def VideoReader(camname, camsize, pix_fmt, crop_xywh,
-                    resize, resize_keepratio, resize_keepratioalign, step=1):
+    def VideoReader(cam_id_name, pix_fmt, crop_xywh,
+                    resize, resize_keepratio, resize_keepratioalign,
+                    camsize_wh=None, camfps=None, camcodec=None, 
+                    campix_fmt=None, step=1):
         assert pix_fmt in ['rgb24', 'bgr24', 'yuv420p', 'nv12']
 
         vid = FFmpegReaderCAM()
-        assert len(camsize)==2
-        vid.width, vid.height = camsize
+        if isinstance(cam_id_name, int):
+            id_device_map = quary_camera_divices()
+            camname = id_device_map[cam_id_name]
+        elif isinstance(cam_id_name, str):
+            camname = cam_id_name
+        else:
+            raise ValueError('Not valid camname')
+        vid.camname = camname
+
+        if camsize_wh is None:
+            cam_options = quary_camera_options(camname)
+            resolutions = [c['camsize_wh'] for c in cam_options]
+            camsize_wh = max(resolutions, key=lambda x: sum(x))
+
+        assert len(camsize_wh)==2
+        vid.width, vid.height = camsize_wh
+        
+        opt_camfps = f' -framerate {camfps} ' if camfps else ''
+        vid.camfps = camfps if camfps else None
+        opt_camcodec = f' -vcodec {camcodec} ' if camcodec else ''
+        vid.camcodec = camcodec if camcodec else None
+        opt_campix_fmt = f' -pixel_format {campix_fmt} ' if campix_fmt else ''
+        vid.campix_fmt = campix_fmt if campix_fmt else None
+
         vid.origin_width, vid.origin_height = vid.width, vid.height
         if crop_xywh:
             crop_w, crop_h = crop_xywh[2:]
@@ -101,6 +168,7 @@ class FFmpegReaderCAM:
 
         args = (f'ffmpeg -loglevel warning '
                 f' -f dshow -video_size {vid.origin_width}x{vid.origin_height} '
+                f' {opt_camfps} {opt_camcodec} {opt_campix_fmt} '
                 f' -i video="{camname}" '
                 f' {filteropt} -pix_fmt {pix_fmt} -f rawvideo pipe:')
 

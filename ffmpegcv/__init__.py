@@ -234,14 +234,19 @@ def VideoWriterNV(file,
     return FFmpegWriterNV.VideoWriter(file, codec, fps, frameSize, pix_fmt, gpu)
 
 
-def VideoCaptureCAM(camname="OBS Virtual Camera",
-                    camsize=None,
+def VideoCaptureCAM(camname,
                     pix_fmt='bgr24',
                     crop_xywh=None,
                     resize=None,
                     resize_keepratio=True,
-                    resize_keepratioalign='center'):
-    return FFmpegReaderCAM.VideoReader(camname, camsize, pix_fmt, crop_xywh,
-        resize, resize_keepratio, resize_keepratioalign)
+                    resize_keepratioalign='center',
+                    camsize_wh=None,
+                    camfps=None,
+                    camcodec=None,
+                    campix_fmt=None):
+    return FFmpegReaderCAM.VideoReader(camname, pix_fmt, crop_xywh,
+        resize, resize_keepratio, resize_keepratioalign,
+        camsize_wh=camsize_wh, camfps=camfps, camcodec=camcodec,
+        campix_fmt=campix_fmt)
 
 VideoReaderCAM = VideoCaptureCAM
