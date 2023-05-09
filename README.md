@@ -194,7 +194,8 @@ with vidin, vidout:
 
 - The `VideoCaptureCAM` aims to support ROI operations. The Opencv will be general fascinating than ffmpegcv in camera read. **I recommand the opencv in most camera reading case**.
 - The ffmpegcv can use name to retrieve the camera device. Use `ffmpegcv.VideoCaptureCAM("Integrated Camera")` is readable than `cv2.VideoCaptureCAM(0)`.
-- The VideoCaptureCAM will be laggy and dropping frames if your post-process takes long time. The VideoCaptureCAM will buffer the recent frames.
+- The `VideoCaptureCAM` will be laggy and dropping frames if your post-process takes long time. The VideoCaptureCAM will buffer the recent frames.
+- The `VideoCaptureCAM` is continously working on background even if you didn't read it. Please release it in time.
 
 ```python
 import cv2
@@ -226,8 +227,9 @@ cap = ffmpegcv.VideoCaptureCAM("Integrated Camera", crop_xywh=(0, 0, 640, 480), 
 ```
 
 **list all camera devices**
-```
+```python
 from ffmpegcv.ffmpeg_reader_camera import quary_camera_divices
+
 devices = quary_camera_divices()
 print(devices)
 ```
@@ -237,8 +239,9 @@ print(devices)
 
 **Set the camera resolution, fps, vcodec/pixel-format**
 
-```
+```python
 from ffmpegcv.ffmpeg_reader_camera import quary_camera_options
+
 options = quary_camera_options(0)  # or quary_camera_options("Integrated Camera") 
 print(options)
 cap = ffmpegcv.VideoCaptureCAM(0, **options[-1])
