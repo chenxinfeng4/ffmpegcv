@@ -22,6 +22,11 @@ with vidin, vidout:
         vidout.write(frame)
 ```
 
+Read the camera by device name.
+```python
+cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
+```
+
 ## Install
 You need to download ffmpeg before you can use ffmpegcv
 > conda install ffmpeg 
@@ -182,3 +187,59 @@ with vidin, vidout:
     for frame in vidin:
         vidout.write(frame)
 ```
+
+## Camera Reader
+---
+***Experimental feature**. The ffmpegcv offers Camera reader. Which is consistent with VideoFiler reader. 
+- Opencv will be faster than ffmpegcv in camera read. I recommand the opencv in most camera reading case.
+- The ffmpegcv can use name to retrieve the camera device. Use `ffmpegcv.VideoCaptureCAM("Integrated Camera")` is readable than `cv2.VideoCaptureCAM(0)`.
+- The VideoCaptureCAM will drop frames if your process take long time. The VideoCaptureCAM will buffer the recent 30 frames.
+
+```python
+import cv2
+cap = cv2.VideoCapture(0)
+while True:
+    ret, frame = cap.read()
+    cv2.imshow('frame', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+cap.release()
+
+# ffmpegcv
+import ffmpegcv
+cap = ffmpegcv.VideoCaptureCAM(0)
+while True:
+    ret, frame = cap.read()
+    cv2.imshow('frame', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+cap.release()
+
+# ffmpegcv use by camera name
+cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
+
+# ffmpegcv use camera with ROI operations
+cap = ffmpegcv.VideoCaptureCAM("Integrated Camera", crop_xywh=(0, 0, 640, 480), resize=(512, 512), resize_keepratio=True)
+
+
+```
+
+**list all camera devices**
+```
+from ffmpegcv.ffmpeg_reader_camera import quary_camera_divices
+devices = quary_camera_divices()
+print(devices)
+```
+>{0: ('Integrated Camera', '@device_pnp_\\\\?\\usb#vid_2304&pid_oot#media#0001#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global'),  
+1: ('OBS Virtual Camera', '@device_sw_{860BB310-5D01-11D0-BD3B-00A0C911CE86}\\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}')}
+
+
+**Set the camera resolution, fps, vcodec/pixel-format**
+
+```
+from ffmpegcv.ffmpeg_reader_camera import quary_camera_options
+options = quary_camera_options(0)  # or quary_camera_options("Integrated Camera") 
+print(options)
+cap = ffmpegcv.VideoCaptureCAM(0, **options[-1])
+```
+>[{'camcodec': 'mjpeg', 'campix_fmt': None, 'camsize_wh': (1280, 720), 'camfps': 60.0002}, {'camcodec': 'mjpeg', 'campix_fmt': None, 'camsize_wh': (640, 480), 'camfps': 60.0002}, {'camcodec': 'mjpeg', 'campix_fmt': None, 'camsize_wh': (1920, 1080), 'camfps': 60.0002}, {'camcodec': None, 'campix_fmt': 'yuyv422', 'camsize_wh': (1280, 720), 'camfps': 10}, {'camcodec': None, 'campix_fmt': 'yuyv422', 'camsize_wh': (640, 480), 'camfps': 30}, {'camcodec': None, 'campix_fmt': 'yuyv422', 'camsize_wh': (1920, 1080), 'camfps': 5}]

@@ -15,7 +15,10 @@ def quary_camera_divices() -> dict:
     dshowliststr = dshowliststr.split('DirectShow audio devices')[0]
     pattern = re.compile(r'\[[^\]]*?\]  "([^"]*)"')
     matches = pattern.findall(dshowliststr)
-    id_device_map = {i:device for i, device in enumerate(matches)}
+    alternative_pattern = re.compile(r'Alternative name "(.*)"')
+    alternative_names = alternative_pattern.findall(dshowliststr)
+    assert len(matches)==len(alternative_names)
+    id_device_map = {i:device for i, device in enumerate(zip(matches, alternative_names))}
     if len(id_device_map)==0:
         print('No camera divice found')
     return id_device_map
@@ -24,7 +27,7 @@ def quary_camera_divices() -> dict:
 def quary_camera_options(cam_id_name) -> str:
     if isinstance(cam_id_name, int):
         id_device_map = quary_camera_divices()
-        camname = id_device_map[cam_id_name]
+        camname = id_device_map[cam_id_name][1]
     elif isinstance(cam_id_name, str):
         camname = cam_id_name
     else:
@@ -43,8 +46,8 @@ def quary_camera_options(cam_id_name) -> str:
         cam_options['campix_fmt'] = re.search(r"pixel_format=(\w+)", text).group(1) if 'pixel_format' in text else None
         camsize_wh = re.search(r"min s=(\w+)", text).group(1)
         cam_options['camsize_wh'] = tuple(int(v) for v in camsize_wh.split('x'))
-        camfps = float(re.search(r"fps=(\w+)", text).group(1))
-        cam_options['camfps'] = int(camfps) if round(camfps)==camfps else camfps
+        camfps = float(re.findall(r'fps=([\d.]+)', text)[-1])
+        cam_options['camfps'] = int(camfps) if int(camfps)==camfps else camfps
         outlist.append(cam_options)
     return outlist
 
@@ -102,7 +105,7 @@ class FFmpegReaderCAM:
         vid = FFmpegReaderCAM()
         if isinstance(cam_id_name, int):
             id_device_map = quary_camera_divices()
-            camname = id_device_map[cam_id_name]
+            camname = id_device_map[cam_id_name][1]
         elif isinstance(cam_id_name, str):
             camname = cam_id_name
         else:
