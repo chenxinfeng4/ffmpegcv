@@ -191,9 +191,10 @@ with vidin, vidout:
 ## Camera Reader
 ---
 ***Experimental feature**. The ffmpegcv offers Camera reader. Which is consistent with VideoFiler reader. 
-- Opencv will be faster than ffmpegcv in camera read. I recommand the opencv in most camera reading case.
+
+- The `VideoCaptureCAM` aims to support ROI operations. The Opencv will be general fascinating than ffmpegcv in camera read. **I recommand the opencv in most camera reading case**.
 - The ffmpegcv can use name to retrieve the camera device. Use `ffmpegcv.VideoCaptureCAM("Integrated Camera")` is readable than `cv2.VideoCaptureCAM(0)`.
-- The VideoCaptureCAM will drop frames if your process take long time. The VideoCaptureCAM will buffer the recent 30 frames.
+- The VideoCaptureCAM will be laggy and dropping frames if your post-process takes long time. The VideoCaptureCAM will buffer the recent frames.
 
 ```python
 import cv2
