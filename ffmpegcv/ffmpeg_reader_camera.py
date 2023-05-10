@@ -60,17 +60,43 @@ def _query_camera_divices_win() -> dict:
 
 
 def _query_camera_divices_linux() -> dict:
-    import glob
-    v4l2_devices = glob.glob('/dev/video*')
-    id_device_map = {i:(vname, vname) for i, vname in enumerate(v4l2_devices)}
+    "edit from https://github.com/p513817/python-get-cam-name/blob/master/get_cam_name.py"
+    import os    
+    root = "/sys/class/video4linux"
+    cam_info=[]
+    
+    for index in sorted([file for file in os.listdir(root)]):        
+        # Get Camera Name From /sys/class/video4linux/<video*>/name
+        real_index_file = os.path.realpath("/sys/class/video4linux/" + index + "/index")
+        with open(real_index_file, "r") as name_file:
+            _index = name_file.read().rstrip()
+            if _index != '0':
+                continue
+
+        real_file = os.path.realpath("/sys/class/video4linux/" + index + "/name")
+        with open(real_file, "r") as name_file:
+            name = name_file.read().rstrip()
+            name = name.split(':')[0]
+        
+        # Setup Each Camera and Index ( video* )    
+        cam_info.append((name, '/dev/'+index))
+
+    id_device_map = {i:vname for i, vname in enumerate(cam_info)}
     return id_device_map
 
 
-def query_camera_devices() -> dict:
-    return {platform.linux: _query_camera_divices_linux,
+def query_camera_devices(verbose_dict: bool = False) -> dict:
+    result = {platform.linux: _query_camera_divices_linux,
             platform.mac: _query_camera_divices_mac,
             platform.win: _query_camera_divices_win}[this_os]()
-
+    if verbose_dict:
+        dict_by_v0 = {v[0]:v for v in result.values()}
+        dict_by_v1 = {v[1]:v for v in result.values()}
+        result.update(dict_by_v0)
+        result.update(dict_by_v1)
+    
+    return result
+            
 
 def _query_camera_options_mac(cam_id_name) -> str:
     print('\033[33m' + "FFmpeg& FFmpegcv CAN NOT query the camera options in MAC platform."+ '\033[0m')
@@ -81,14 +107,7 @@ def _query_camera_options_mac(cam_id_name) -> str:
 def _query_camera_options_linux(cam_id_name) -> str:
     print('\033[33m' + "FFmpeg& FFmpegcv CAN NOT query the camera FPS in Linux platform."+ '\033[0m')
     print('Please find the proper parameter other way.')
-    if isinstance(cam_id_name, int):
-        id_device_map = query_camera_devices()
-        camname = id_device_map[cam_id_name][1]
-    elif isinstance(cam_id_name, str):
-        camname = cam_id_name
-    else:
-        raise ValueError('Not valid camname')
-    
+    camname = query_camera_devices(verbose_dict=True)[cam_id_name][1] 
     command = f'ffmpeg -hide_banner -f v4l2 -list_formats all -i "{camname}"'
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
@@ -204,6 +223,10 @@ class FFmpegReaderCAM:
             else:
                 camname = None
                 camid = cam_id_name
+        elif this_os == platform.linux:
+            id_device_map = query_camera_devices(verbose_dict=True)
+            camname = id_device_map[cam_id_name][-1]
+            camid = None
         else:
             if isinstance(cam_id_name, int):
                 id_device_map = query_camera_devices()

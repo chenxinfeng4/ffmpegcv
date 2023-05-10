@@ -208,7 +208,7 @@ while True:
         break
 cap.release()
 
-# ffmpegcv
+# ffmpegcv, in Windows&Linux
 import ffmpegcv
 cap = ffmpegcv.VideoCaptureCAM(0)
 while True:
@@ -218,8 +218,13 @@ while True:
         break
 cap.release()
 
-# ffmpegcv use by camera name
+# ffmpegcv use by camera name, in Windows&Linux
 cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
+
+# ffmpegcv use camera path if multiple cameras conflict
+cap = ffmpegcv.VideoCaptureCAM('@device_pnp_\\\\?\\usb#vid_2304&'
+    'pid_oot#media#0001#{65e8773d-8f56-11d0-a3b9-00a0c9223196}'
+    '\\global')
 
 # ffmpegcv use camera with ROI operations
 cap = ffmpegcv.VideoCaptureCAM("Integrated Camera", crop_xywh=(0, 0, 640, 480), resize=(512, 512), resize_keepratio=True)
@@ -252,7 +257,8 @@ cap = ffmpegcv.VideoCaptureCAM(0, **options[-1])
 **Known issues**
 1. The VideoCaptureCAM didn't give a smooth experience in macOS. You must specify all the camera parameters. And the query_camera_options woun't give any suggestion. That's because the `ffmpeg` cannot list device options using mac native `avfoundation`. 
 ```python
+# The macOS requires full argument.
 cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', camsize_wh=(1280,720), camfps=30, campix_fmt='nv12')
 ```
 
-2. The VideoCaptureCAM cann't list the FPS in linux. Because the `ffmpeg` cound't query the device's FPS using linux native `rtc` or `v4l2` module. Besides, there are dummy camera somehow “connected” to the system.
+2. The VideoCaptureCAM cann't list the FPS in linux. Because the `ffmpeg` cound't query the device's FPS using linux native `v4l2` module. However, it's just OK to let the FPS blank.
