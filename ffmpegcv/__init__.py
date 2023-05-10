@@ -254,6 +254,71 @@ def VideoCaptureCAM(
     camcodec=None,
     campix_fmt=None,
 ):
+    """
+    Alternative to cv2.VideoCapture
+
+    Parameters
+    ----------
+    file : see ffmpegcv.VideoReader
+    codec : see ffmpegcv.VideoReader
+    pix_fmt : see ffmpegcv.VideoReader
+    crop_xywh : see ffmpegcv.VideoReader
+    resize  : see ffmpegcv.VideoReader
+    resize_keepratio : see ffmpegcv.VideoReader
+    resize_keepratioalign : see ffmpegcv.VideoReader
+    camsize_wh: tuple or None
+        Camera resolution (width, height). e.g (800, 600)
+    camfps: float or None
+        Camera framerate. e.g. 30.
+    camcodec: str or None
+        Camera codec. e.g. 'mjpeg' or 'h264'.
+    campix_fmt: str or None
+        Camera pixel format. e.g. 'rgb24' or 'yuv420p'.
+        Just set one of `camcodec` or `campix_fmt`.
+    Examples
+    --------
+    opencv
+    ```
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        pass
+    ```
+
+    ffmpegcv
+    ```
+    cap = ffmpegcv.VideoCaptureCAM(0)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        pass
+    ```
+
+    Or use camera name
+    ```
+    cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
+    ```
+
+    Use full camera parameter
+    ```
+    cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', 
+                                    camsize_wh = (1280,720), 
+                                    camfps = 30, 
+                                    campix_fmt = 'nv12')
+    ```
+
+    Use camera with ROI operations
+    ```
+    cap = ffmpegcv.VideoCaptureCAM("Integrated Camera", 
+                                    crop_xywh = (0, 0, 640, 480), 
+                                    resize = (512, 512), 
+                                    resize_keepratio = True)
+    ```
+    Author: Chenxinfeng 2023-05-11, cxf529125853@163.com
+    """
     return FFmpegReaderCAM.VideoReader(
         camname,
         pix_fmt,
