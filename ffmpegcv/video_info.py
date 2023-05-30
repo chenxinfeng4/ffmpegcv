@@ -19,7 +19,7 @@ def get_info(video):
     outinfo['width'] = int(vinfo['width'])
     outinfo['height'] = int(vinfo['height'])
     outinfo['fps'] = eval(vinfo['r_frame_rate'])
-    outinfo['count'] = int(vinfo['nb_frames'])
+    outinfo['count'] = int(vinfo['nb_read_packets']) #nb_read_packets | nb_frames
     outinfo['codec'] = vinfo['codec_name']
     outinfo['duration'] = float(vinfo['duration'])
     videoinfo = VideoInfo(**outinfo)
