@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 
 def get_info(video):
-    cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 -show_format -show_streams "{}"'.format(video)
+    cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 -count_packets -show_format -show_streams "{}"'.format(video)
     output = subprocess.check_output(cmd, shell=True)
     root = ET.fromstring(output)
     assert (root[0].tag, root[0][0].tag) == ('streams', 'stream')
@@ -18,7 +18,7 @@ def get_info(video):
     outinfo['width'] = int(vinfo['width'])
     outinfo['height'] = int(vinfo['height'])
     outinfo['fps'] = eval(vinfo['r_frame_rate'])
-    outinfo['count'] = int(vinfo['nb_frames'])
+    outinfo['count'] = int(vinfo.get('nb_frames', vinfo['nb_read_packets']))
     outinfo['codec'] = vinfo['codec_name']
     outinfo['duration'] = float(vinfo['duration'])
     videoinfo = VideoInfo(**outinfo)
