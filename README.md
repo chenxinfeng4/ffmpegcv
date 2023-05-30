@@ -196,6 +196,7 @@ with vidin, vidout:
 - The ffmpegcv can use name to retrieve the camera device. Use `ffmpegcv.VideoCaptureCAM("Integrated Camera")` is readable than `cv2.VideoCaptureCAM(0)`.
 - The `VideoCaptureCAM` will be laggy and dropping frames if your post-process takes long time. The VideoCaptureCAM will buffer the recent frames.
 - The `VideoCaptureCAM` is continously working on background even if you didn't read it. Please release it in time.
+- Works perfect in Windows, not-perfect in Linux and macOS.
 
 ```python
 import cv2
@@ -207,7 +208,7 @@ while True:
         break
 cap.release()
 
-# ffmpegcv
+# ffmpegcv, in Windows&Linux
 import ffmpegcv
 cap = ffmpegcv.VideoCaptureCAM(0)
 while True:
@@ -217,8 +218,13 @@ while True:
         break
 cap.release()
 
-# ffmpegcv use by camera name
+# ffmpegcv use by camera name, in Windows&Linux
 cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
+
+# ffmpegcv use camera path if multiple cameras conflict
+cap = ffmpegcv.VideoCaptureCAM('@device_pnp_\\\\?\\usb#vid_2304&'
+    'pid_oot#media#0001#{65e8773d-8f56-11d0-a3b9-00a0c9223196}'
+    '\\global')
 
 # ffmpegcv use camera with ROI operations
 cap = ffmpegcv.VideoCaptureCAM("Integrated Camera", crop_xywh=(0, 0, 640, 480), resize=(512, 512), resize_keepratio=True)
@@ -228,9 +234,9 @@ cap = ffmpegcv.VideoCaptureCAM("Integrated Camera", crop_xywh=(0, 0, 640, 480), 
 
 **list all camera devices**
 ```python
-from ffmpegcv.ffmpeg_reader_camera import quary_camera_divices
+from ffmpegcv.ffmpeg_reader_camera import query_camera_devices
 
-devices = quary_camera_divices()
+devices = query_camera_devices()
 print(devices)
 ```
 >{0: ('Integrated Camera', '@device_pnp_\\\\?\\usb#vid_2304&pid_oot#media#0001#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global'),  
@@ -240,10 +246,19 @@ print(devices)
 **Set the camera resolution, fps, vcodec/pixel-format**
 
 ```python
-from ffmpegcv.ffmpeg_reader_camera import quary_camera_options
+from ffmpegcv.ffmpeg_reader_camera import query_camera_options
 
-options = quary_camera_options(0)  # or quary_camera_options("Integrated Camera") 
+options = query_camera_options(0)  # or query_camera_options("Integrated Camera") 
 print(options)
 cap = ffmpegcv.VideoCaptureCAM(0, **options[-1])
 ```
 >[{'camcodec': 'mjpeg', 'campix_fmt': None, 'camsize_wh': (1280, 720), 'camfps': 60.0002}, {'camcodec': 'mjpeg', 'campix_fmt': None, 'camsize_wh': (640, 480), 'camfps': 60.0002}, {'camcodec': 'mjpeg', 'campix_fmt': None, 'camsize_wh': (1920, 1080), 'camfps': 60.0002}, {'camcodec': None, 'campix_fmt': 'yuyv422', 'camsize_wh': (1280, 720), 'camfps': 10}, {'camcodec': None, 'campix_fmt': 'yuyv422', 'camsize_wh': (640, 480), 'camfps': 30}, {'camcodec': None, 'campix_fmt': 'yuyv422', 'camsize_wh': (1920, 1080), 'camfps': 5}]
+
+**Known issues**
+1. The VideoCaptureCAM didn't give a smooth experience in macOS. You must specify all the camera parameters. And the query_camera_options woun't give any suggestion. That's because the `ffmpeg` cannot list device options using mac native `avfoundation`. 
+```python
+# The macOS requires full argument.
+cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', camsize_wh=(1280,720), camfps=30, campix_fmt='nv12')
+```
+
+2. The VideoCaptureCAM cann't list the FPS in linux. Because the `ffmpeg` cound't query the device's FPS using linux native `v4l2` module. However, it's just OK to let the FPS blank.

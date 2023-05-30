@@ -6,11 +6,17 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='ffmpegcv', # 应用名
-    version='0.2.8', # 版本号
+    version='0.3.0', # 版本号
     packages=find_packages(include=['ffmpegcv*']), # 包括在安装包内的 Python 包
     author='chenxf',
     author_email='cxf529125853@163.com',
     url='https://pypi.org/project/ffmpegcv/',
     long_description=long_description,
-    long_description_content_type='text/markdown'
+    long_description_content_type='text/markdown',
+
+    # 添加依赖项
+    python_requires='>=3.6',
+    install_requires=[
+        'numpy',
+    ]
 )
