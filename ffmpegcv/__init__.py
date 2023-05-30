@@ -1,6 +1,7 @@
 from .ffmpeg_reader import FFmpegReader, FFmpegReaderNV
 from .ffmpeg_writer import FFmpegWriter, FFmpegWriterNV
 from .ffmpeg_reader_camera import FFmpegReaderCAM
+from .ffmpeg_reader_stream import FFmpegReaderStream
 from .video_info import get_num_NVIDIA_GPUs
 import shutil
 from subprocess import DEVNULL, check_output
@@ -334,3 +335,67 @@ def VideoCaptureCAM(
 
 
 VideoReaderCAM = VideoCaptureCAM
+
+
+def VideoCaptureStream(
+    stream_url,
+    pix_fmt="bgr24",
+    crop_xywh=None,
+    resize=None,
+    resize_keepratio=True,
+    resize_keepratioalign="center"
+):
+    """
+    Alternative to cv2.VideoCapture
+
+    Parameters
+    ----------
+    stream_url : RTSP, RTP, RTMP, HTTP, HTTPS url
+    codec : see ffmpegcv.VideoReader
+    pix_fmt : see ffmpegcv.VideoReader
+    crop_xywh : see ffmpegcv.VideoReader
+    resize  : see ffmpegcv.VideoReader
+    resize_keepratio : see ffmpegcv.VideoReader
+    resize_keepratioalign : see ffmpegcv.VideoReader
+
+    Examples
+    --------
+    opencv
+    ```
+    stream_url = 'http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear2/prog_index.m3u8'
+    cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+
+    if not cap.isOpened():
+        print('Cannot open the stream')
+        exit(-1)
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        pass
+    ```
+
+    ffmpegcv
+    ```
+    cap = ffmpegcv.VideoCaptureStream(stream_url)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        pass
+    ```
+
+    Author: Chenxinfeng 2023-05-31, cxf529125853@163.com
+    """
+    return FFmpegReaderStream.VideoReader(
+        stream_url,
+        pix_fmt,
+        crop_xywh,
+        resize,
+        resize_keepratio,
+        resize_keepratioalign
+    )
+
+
+VideoReaderStream = VideoCaptureStream

@@ -190,7 +190,7 @@ with vidin, vidout:
 
 ## Camera Reader
 ---
-***Experimental feature**. The ffmpegcv offers Camera reader. Which is consistent with VideoFiler reader. 
+**Experimental feature**. The ffmpegcv offers Camera reader. Which is consistent with VideoFiler reader. 
 
 - The `VideoCaptureCAM` aims to support ROI operations. The Opencv will be general fascinating than ffmpegcv in camera read. **I recommand the opencv in most camera reading case**.
 - The ffmpegcv can use name to retrieve the camera device. Use `ffmpegcv.VideoCaptureCAM("Integrated Camera")` is readable than `cv2.VideoCaptureCAM(0)`.
@@ -262,3 +262,38 @@ cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', camsize_wh=(1280,720), camf
 ```
 
 2. The VideoCaptureCAM cann't list the FPS in linux. Because the `ffmpeg` cound't query the device's FPS using linux native `v4l2` module. However, it's just OK to let the FPS blank.
+
+
+## Stream Reader
+**Experimental feature**. The ffmpegcv offers Camera reader. Which is consistent with VideoFiler reader. The feature is like a camera.
+Becareful when using it.
+
+- Support `RTSP`, `RTP`, `RTMP`, `HTTP`, `HTTPS` streams.
+- The `VideoCaptureStream` will be laggy and dropping frames if your post-process takes long time. The VideoCaptureCAM will buffer the recent frames.
+- The `VideoCaptureStream` is continously working on background even if you didn't read it. Please release it in time.
+
+
+```python
+import cv2
+stream_url = 'http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear2/prog_index.m3u8'
+cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+
+if not cap.isOpened():
+    print('Cannot open the stream')
+    exit(-1)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    pass
+
+# ffmpegcv, in Windows&Linux
+import ffmpegcv
+cap = ffmpegcv.VideoCaptureStream(stream_url)
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    pass
+```
