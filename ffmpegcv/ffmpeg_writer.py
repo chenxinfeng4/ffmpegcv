@@ -26,7 +26,7 @@ class FFmpegWriter:
         return f'{self.__class__}\n'  + props
 
     @staticmethod
-    def VideoWriter(filename, codec, fps, frameSize, pix_fmt):
+    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, bitrate=None):
         if codec is None:
             codec = 'h264'
         elif not isinstance(codec, str):
@@ -41,11 +41,14 @@ class FFmpegWriter:
         vid.width, vid.height = vid.size if vid.size else (None, None)
         vid.codec, vid.pix_fmt, vid.filename = codec, pix_fmt, filename
         vid.waitInit = True
+        vid.bitrate = bitrate
         return vid
 
     def _init_video_stream(self):
+        bitrate_str = f'-b:v {self.bitrate} ' if self.bitrate else ''
         args = (f'ffmpeg -y -loglevel warning ' 
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
+                f'{bitrate_str} '
                 f'-r {self.fps} -c:v {self.codec} -pix_fmt yuv420p "{self.filename}"')
         self.process = run_async(args)
 
@@ -72,7 +75,7 @@ class FFmpegWriter:
 
 class FFmpegWriterNV(FFmpegWriter):
     @staticmethod
-    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, gpu):
+    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, gpu, bitrate=None):
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU
         gpu = int(gpu) % numGPU if gpu is not None else 0
@@ -96,13 +99,16 @@ class FFmpegWriterNV(FFmpegWriter):
         vid.codec, vid.pix_fmt, vid.filename = codec, pix_fmt, filename
         vid.gpu = gpu
         vid.waitInit = True
+        vid.bitrate = bitrate
         return vid
 
     def _init_video_stream(self):
         default_preset = 'default' if IN_COLAB else 'p2'
         self.preset = getattr(self, 'preset', default_preset)
+        bitrate_str = f'-b:v {self.bitrate} ' if self.bitrate else ''
         args = (f'ffmpeg -y -loglevel warning '
             f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
             f'-preset {self.preset} '
+            f'{bitrate_str} '
             f'-r {self.fps} -gpu {self.gpu} -c:v {self.codec} -pix_fmt yuv420p "{self.filename}"')
         self.process = run_async(args)
