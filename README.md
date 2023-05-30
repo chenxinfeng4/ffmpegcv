@@ -9,6 +9,11 @@ The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which ar
 
 In all, ffmpegcv is just similar to opencv api. But is faster* and with more codecs.
 
+Functions:
+- `VideoWriter`: Write a video file.
+- `VideoCapture`: Read a video file.
+- `VideoCaptureCAM`: Read a camera.
+- `VideoCaptureStream`: Read a RTP/RTSP/RTMP/HTTP stream.
 
 ## Basic example
 Read a video by CPU, and rewrite it by GPU.
@@ -195,7 +200,7 @@ with vidin, vidout:
 - The `VideoCaptureCAM` aims to support ROI operations. The Opencv will be general fascinating than ffmpegcv in camera read. **I recommand the opencv in most camera reading case**.
 - The ffmpegcv can use name to retrieve the camera device. Use `ffmpegcv.VideoCaptureCAM("Integrated Camera")` is readable than `cv2.VideoCaptureCAM(0)`.
 - The `VideoCaptureCAM` will be laggy and dropping frames if your post-process takes long time. The VideoCaptureCAM will buffer the recent frames.
-- The `VideoCaptureCAM` is continously working on background even if you didn't read it. Please release it in time.
+- The `VideoCaptureCAM` is continously working on background even if you didn't read it. **Please release it in time**.
 - Works perfect in Windows, not-perfect in Linux and macOS.
 
 ```python
@@ -265,12 +270,13 @@ cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', camsize_wh=(1280,720), camf
 
 
 ## Stream Reader
-**Experimental feature**. The ffmpegcv offers Camera reader. Which is consistent with VideoFiler reader. The feature is like a camera.
+**Experimental feature**. The ffmpegcv offers Stream reader. Which is consistent with VideoFiler reader, and more similiar to the camera.
 Becareful when using it.
 
 - Support `RTSP`, `RTP`, `RTMP`, `HTTP`, `HTTPS` streams.
 - The `VideoCaptureStream` will be laggy and dropping frames if your post-process takes long time. The VideoCaptureCAM will buffer the recent frames.
-- The `VideoCaptureStream` is continously working on background even if you didn't read it. Please release it in time.
+- The `VideoCaptureStream` is continously working on background even if you didn't read it. **Please release it in time**.
+- It's still experimental. Recommand you to use opencv.
 
 
 ```python
@@ -288,7 +294,7 @@ while True:
         break
     pass
 
-# ffmpegcv, in Windows&Linux
+# ffmpegcv
 import ffmpegcv
 cap = ffmpegcv.VideoCaptureStream(stream_url)
 while True:
