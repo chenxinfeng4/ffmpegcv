@@ -7,13 +7,30 @@ The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which ar
 - The ffmpegcv support **RGB** & BGR format as you like.
 - The ffmpegcv can support ROI operations.You can **crop**, **resize** and **pad** the ROI.
 
-In all, ffmpegcv is just similar to opencv api. But is faster* and with more codecs.
+In all, ffmpegcv is just similar to opencv api. But is has more codecs and does't require opencv installed.
 
 Functions:
 - `VideoWriter`: Write a video file.
 - `VideoCapture`: Read a video file.
 - `VideoCaptureCAM`: Read a camera.
 - `VideoCaptureStream`: Read a RTP/RTSP/RTMP/HTTP stream.
+
+## Install
+You need to download ffmpeg before you can use ffmpegcv.
+```
+ #1A. LINUX: sudo apt install ffmpeg
+ #1B. MAC: brew install ffmpeg
+ #1C. WINDOWS: download ffmpeg and add to the path
+ 
+ conda install ffmpeg  #1D. CONDA
+ pip install ffmpegcv
+ ```
+
+## When should choose `ffmpegcv` other than `opencv`:
+- The `opencv` is hard to install. The ffmpegcv only requires `numpy` and `FFmpeg`, works across Mac/Windows/Linux platforms.
+- The `opencv` packages too much image processing toolbox. You just want a simple video/camero IO with GPU accessible.
+- The `opencv` didn't support `h264`/`h265` and other video writers.
+- You want to **crop**, **resize** and **pad** the video/camero ROI.
 
 ## Basic example
 Read a video by CPU, and rewrite it by GPU.
@@ -27,16 +44,13 @@ with vidin, vidout:
         vidout.write(frame)
 ```
 
-Read the camera by device name.
+Read the camera.
 ```python
+# by device ID
+cap = ffmpegcv.VideoCaptureCAM(0)
+# by device name
 cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
 ```
-
-## Install
-You need to download ffmpeg before you can use ffmpegcv
-> conda install ffmpeg 
->
-> pip install ffmpegcv
 
 ## GPU Accelation
 - Support NVIDIA card only.
@@ -237,7 +251,7 @@ cap = ffmpegcv.VideoCaptureCAM("Integrated Camera", crop_xywh=(0, 0, 640, 480), 
 
 ```
 
-**list all camera devices**
+**List all camera devices**
 ```python
 from ffmpegcv.ffmpeg_reader_camera import query_camera_devices
 
@@ -266,7 +280,7 @@ cap = ffmpegcv.VideoCaptureCAM(0, **options[-1])
 cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', camsize_wh=(1280,720), camfps=30, campix_fmt='nv12')
 ```
 
-2. The VideoCaptureCAM cann't list the FPS in linux. Because the `ffmpeg` cound't query the device's FPS using linux native `v4l2` module. However, it's just OK to let the FPS blank.
+2. The VideoCaptureCAM cann't list the FPS in linux. Because the `ffmpeg` cound't query the device's FPS using linux native `v4l2` module. However, it's just OK to let the FPS empty.
 
 
 ## Stream Reader
@@ -280,6 +294,7 @@ Becareful when using it.
 
 
 ```python
+# opencv
 import cv2
 stream_url = 'http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear2/prog_index.m3u8'
 cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
