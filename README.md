@@ -2,6 +2,9 @@
 ![Python versions](https://img.shields.io/badge/Python-3.6%2B-blue.svg)
 [![PyPI version](https://img.shields.io/pypi/v/ffmpegcv.svg?logo=pypi&logoColor=FFE873)](https://pypi.org/project/ffmpegcv/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/ffmpegcv.svg)](https://pypistats.org/packages/ffmpegcv)
+![Code size](https://shields.io/github/languages/code-size/chenxinfeng4/ffmpegcv
+)
+![Last Commit](https://shields.io/github/last-commit/chenxinfeng4/ffmpegcv)
 
 The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2.
 
