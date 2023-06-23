@@ -50,7 +50,7 @@ class FFmpegReader:
         assert os.path.exists(filename) and os.path.isfile(
             filename
         ), f"{filename} not exists"
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12"]
+        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12", "gray"]
 
         vid = FFmpegReader()
         videoinfo = get_info(filename)
@@ -103,19 +103,20 @@ class FFmpegReader:
                 xpading, ypading = paddings[resize_keepratioalign]
                 padopt = f"pad={dst_width}:{dst_height}:{xpading}:{ypading}:black"
 
-        if any([cropopt, scaleopt, padopt]):
-            filterstr = ",".join(x for x in [cropopt, scaleopt, padopt] if x)
+        pix_fmtopt = 'extractplanes=y' if pix_fmt=='gray' else ''
+        if any([cropopt, scaleopt, padopt, pix_fmtopt]):
+            filterstr = ",".join(x for x in [cropopt, scaleopt, padopt, pix_fmtopt] if x)
             filteropt = f"-vf {filterstr}"
         else:
             filteropt = ""
 
-        args = (
+        vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning "
             f' -vcodec {vid.codec} -r {vid.fps} -i "{filename}" '
             f" {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:"
         )
 
-        vid.process = run_async(args)
+        vid.process = run_async(vid.ffmpeg_cmd)
         vid.size = (vid.width, vid.height)
         vid.pix_fmt = pix_fmt
         assert (not pix_fmt == "yuv420p") or (
@@ -126,6 +127,7 @@ class FFmpegReader:
             "bgr24": (vid.height, vid.width, 3),
             "nv12": (int(vid.height * 1.5), vid.width),
             "yuv420p": (int(vid.height * 1.5), vid.width),
+            "gray": (vid.height, vid.width, 1)
         }[pix_fmt]
         return vid
 
@@ -133,6 +135,9 @@ class FFmpegReader:
         # It's an experimental function
         # return 'ret, img_gray'
         # img_gray: Height x Width x 1
+        if self.pix_fmt == "gray":
+            return self.read()
+        
         assert self.pix_fmt in ("nv12", "yuv420p")
         ret, img = self.read()
         if not ret:
@@ -160,7 +165,7 @@ class FFmpegReader:
 
 class FFmpegReaderNV(FFmpegReader):
     def _get_opts(
-        vid, videoinfo, crop_xywh, resize, resize_keepratio, resize_keepratioalign
+        vid, videoinfo, crop_xywh, resize, resize_keepratio, resize_keepratioalign, isgray
     ):
         vid.origin_width = videoinfo.width
         vid.origin_height = videoinfo.height
@@ -220,6 +225,12 @@ class FFmpegReaderNV(FFmpegReader):
                 padopt = f"pad={dst_width}:{dst_height}:{xpading}:{ypading}:black"
                 filteropt = f"-vf {padopt}"
 
+        if isgray:
+            if filteropt:
+                filteropt=f'{filteropt},extractplanes=y'
+            else:
+                filteropt=f'-vf extractplanes=y'
+        
         vid.size = (vid.width, vid.height)
         return cropopt, scaleopt, filteropt
 
@@ -236,7 +247,7 @@ class FFmpegReaderNV(FFmpegReader):
         assert os.path.exists(filename) and os.path.isfile(
             filename
         ), f"{filename} not exists"
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12"]
+        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12", "gray"]
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU > 0, "No GPU found"
         gpu = int(gpu) % numGPU if gpu is not None else 0
@@ -245,18 +256,19 @@ class FFmpegReaderNV(FFmpegReader):
         ), "resize must be a tuple of (width, height)"
         videoinfo = get_info(filename)
         vid = FFmpegReaderNV()
+        isgray = pix_fmt == "gray"
         cropopt, scaleopt, filteropt = vid._get_opts(
-            videoinfo, crop_xywh, resize, resize_keepratio, resize_keepratioalign
+            videoinfo, crop_xywh, resize, resize_keepratio, resize_keepratioalign, isgray
         )
         vid.codecNV = decoder_to_nvidia(vid.codec)
 
-        args = (
+        vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning -hwaccel cuda -hwaccel_device {gpu} "
             f' -vcodec {vid.codecNV} {cropopt} {scaleopt} -r {vid.fps} -i "{filename}" '
             f" {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:"
         )
 
-        vid.process = run_async(args)
+        vid.process = run_async(vid.ffmpeg_cmd)
         vid.pix_fmt = pix_fmt
         assert (not pix_fmt == "yuv420p") or (
             vid.height % 2 == 0 and vid.width % 2 == 0
@@ -266,5 +278,6 @@ class FFmpegReaderNV(FFmpegReader):
             "bgr24": (vid.height, vid.width, 3),
             "yuv420p": (int(vid.height * 1.5), vid.width),
             "nv12": (int(vid.height * 1.5), vid.width),
+            "gray": (vid.height, vid.width, 1)
         }[pix_fmt]
         return vid

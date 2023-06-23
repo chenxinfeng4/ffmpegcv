@@ -131,9 +131,9 @@ cap_gpu0 = ffmpegcv.VideoCaptureNV(file)         #NVIDIA GPU0
 cap_gpu1 = ffmpegcv.VideoCaptureNV(file, gpu=1)  #NVIDIA GPU1
 ```
 
-Use rgb24 instead of bgr24
+Use `rgb24` instead of `bgr24`. The `gray` version is more efficient.
 ```python
-cap = ffmpegcv.VideoCapture(file, pix_fmt='rgb24')
+cap = ffmpegcv.VideoCapture(file, pix_fmt='rgb24') #rgb24, bgr24, gray
 ret, frame = cap.read()
 plt.imshow(frame)
 ```

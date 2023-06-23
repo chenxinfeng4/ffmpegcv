@@ -20,7 +20,7 @@ _check()
 
 _check_nvidia_init = None
 
-
+__version__ = '0.3.3'
 def _check_nvidia():
     global _check_nvidia_init
     run = lambda x: check_output(x, shell=True, stderr=DEVNULL)
