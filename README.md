@@ -339,7 +339,7 @@ vid_noblock = ffmpegcv.FFmpegReaderNoblock(ffmpegcv.VideoCapture, vfile, pix_fmt
 def cpu_tense(): time.sleep(0.01)
 for _ in tqdm.trange(1000):
     ret, img = vid_noblock.read() #current img is already buffered, take no time
-    cpu_tense()                   #the next img is buffering in background
+    cpu_tense()                   #meanwhile, the next img is buffering in background
 
 # this is slow
 vid = ffmpegcv.VideoCapture(vfile, pix_fmt='rbg24')
