@@ -152,7 +152,6 @@ class FFmpegReader:
             self.release()
             return False, None
         self.iframe += 1
-        img = None
         img = np.frombuffer(in_bytes, np.uint8).reshape(self.out_numpy_shape)
         return True, img
 

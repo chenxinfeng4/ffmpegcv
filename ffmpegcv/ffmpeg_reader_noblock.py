@@ -44,6 +44,7 @@ class FFmpegReaderNoblock(FFmpegReader):
         if data_id is None:
             return False, None
         else:
+            self.iframe += 1
             return True, self.np_array[data_id]
 
 
