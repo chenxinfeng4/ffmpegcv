@@ -6,17 +6,19 @@
 )
 ![Last Commit](https://shields.io/github/last-commit/chenxinfeng4/ffmpegcv)
 
+English Version | [中文版本](./README_CN.md)
+
 The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2.
 
 - The ffmpegcv is api **compatible** to open-cv. 
 - The ffmpegcv can use **GPU accelerate** encoding and decoding*. 
 - The ffmpegcv support much more video **codecs** v.s. open-cv.
-- The ffmpegcv support **RGB** & BGR format as you like.
+- The ffmpegcv support **RGB** & BGR & GRAY format as you like.
 - The ffmpegcv can support ROI operations.You can **crop**, **resize** and **pad** the ROI.
 
 In all, ffmpegcv is just similar to opencv api. But is has more codecs and does't require opencv installed.
 
-Functions:
+## Functions:
 - `VideoWriter`: Write a video file.
 - `VideoCapture`: Read a video file.
 - `VideoCaptureNV`: Read a video file by NVIDIA GPU.
@@ -83,7 +85,7 @@ See the [link](https://docs.nvidia.com/video-technologies/video-codec-sdk/ffmpeg
 | others      | not sure      | ffmpeg -decoders | ×    | not sure      | ffmpeg -encoders | ×    |
 
 ## Benchmark
-*On the way...*
+*On the way...（maybe never）*
 
 
 ## Video Reader
@@ -329,7 +331,7 @@ while True:
 ```
 
 ## FFmpegReaderNoblock
-**Experimental feature**. A proxy to automatic prepare frames in backgroud, which does not block when reading current frame. This make your python program more efficient in CPU usage. Benifit from multicore CPU.
+A proxy to automatic prepare frames in backgroud, which does not block when reading current frame. This make your python program more efficient in CPU usage. Benifit from multicore CPU.
 
 ```python
 #Proxy any VideoCapture args and kargs
