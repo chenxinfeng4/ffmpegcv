@@ -93,7 +93,11 @@ def run_async(args):
 
 
 def release_process(process):
-    process.stdin.close()
-    process.stdout.close()
-    process.terminate()
-    process.wait()
+    if hasattr(process, "stdin"):
+        process.stdin.close()
+    if hasattr(process, "stdout"):
+        process.stdout.close()
+    if hasattr(process, "terminate"):
+        process.terminate()
+    if hasattr(process, "wait"):
+        process.wait()
