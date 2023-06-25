@@ -4,9 +4,11 @@ import re
 from collections import namedtuple
 import xml.etree.ElementTree as ET
 
+scan_the_whole = {'mkv', 'flv', 'ts'} #scan the whole file to the count, slow
 
 def get_info(video:str):
-    use_count_packets = '-count_packets' if video.endswith('.ts') else ''
+    do_scan_the_whole = video.split('.')[-1] in scan_the_whole
+    use_count_packets = '-count_packets' if do_scan_the_whole else ''
     cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams "{}"'.format(use_count_packets, video)
     output = subprocess.check_output(cmd, shell=True)
     root = ET.fromstring(output)
@@ -20,10 +22,11 @@ def get_info(video:str):
     outinfo['width'] = int(vinfo['width'])
     outinfo['height'] = int(vinfo['height'])
     outinfo['fps'] = eval(vinfo['r_frame_rate'])
-    # outinfo['count'] = int(vinfo['nb_read_packets']) #nb_read_packets | nb_frames
-    outinfo['count'] = int(vinfo['nb_frames']) #nb_read_packets | nb_frames
+    outinfo['count'] = int(vinfo['nb_read_packets' if do_scan_the_whole
+                         else 'nb_frames']) #nb_read_packets | nb_frames
     outinfo['codec'] = vinfo['codec_name']
-    outinfo['duration'] = float(vinfo['duration'])
+    outinfo['duration'] = (float(vinfo['duration']) if 'duration' in vinfo
+                            else outinfo['count']/outinfo['fps'])
     videoinfo = VideoInfo(**outinfo)
 
     return videoinfo
