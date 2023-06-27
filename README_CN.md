@@ -328,6 +328,7 @@ while True:
 更快的读写取视频。利用多进程在后台自动准备帧，这样在读写当前帧时不会阻塞。这使得您的Python程序在CPU使用方面更高效。带来最大翻倍效率提升。
 
 > ffmpegcv.VideoCapture(*args) -> ffmpegcv.noblock(ffmpegcv.VideoCapture, *args)
+>
 > ffmpegcv.VideoWriter(*args) -> ffmpegcv.noblock(ffmpegcv.VideoWriter, *args)
 
 ```python

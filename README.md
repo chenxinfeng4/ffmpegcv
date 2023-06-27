@@ -24,7 +24,7 @@ In all, ffmpegcv is just similar to opencv api. But is has more codecs and does'
 - `VideoCaptureNV`: Read a video file by NVIDIA GPU.
 - `VideoCaptureCAM`: Read a camera.
 - `VideoCaptureStream`: Read a RTP/RTSP/RTMP/HTTP stream.
-- `noblck`: Read/Write a video file in background.
+- `noblck`: Read/Write a video file in background using mulitprocssing.
 
 ## Install
 You need to download ffmpeg before you can use ffmpegcv.
@@ -334,9 +334,10 @@ while True:
 A proxy to automatic prepare frames in backgroud, which does not block when reading&writing current frame (multiprocessing). This make your python program more efficient in CPU usage. Up to 2x boost.
 
 > ffmpegcv.VideoCapture(*args) -> ffmpegcv.noblock(ffmpegcv.VideoCapture, *args)
+> 
 > ffmpegcv.VideoWriter(*args) -> ffmpegcv.noblock(ffmpegcv.VideoWriter, *args)
 ```python
-#Proxy any VideoCapture args and kargs
+#Proxy any VideoCapture&VideoWriter args and kargs
 vid_noblock = ffmpegcv.noblock(ffmpegcv.VideoCapture, vfile, pix_fmt='rbg24')
 
 # this is fast
