@@ -24,7 +24,7 @@ In all, ffmpegcv is just similar to opencv api. But is has more codecs and does'
 - `VideoCaptureNV`: Read a video file by NVIDIA GPU.
 - `VideoCaptureCAM`: Read a camera.
 - `VideoCaptureStream`: Read a RTP/RTSP/RTMP/HTTP stream.
-- `FFmpegReaderNoblock`: Read a video file in background.
+- `noblck`: Read/Write a video file in background.
 
 ## Install
 You need to download ffmpeg before you can use ffmpegcv.
@@ -330,12 +330,14 @@ while True:
     pass
 ```
 
-## FFmpegReaderNoblock
-A proxy to automatic prepare frames in backgroud, which does not block when reading current frame. This make your python program more efficient in CPU usage. Benifit from multicore CPU.
+## Noblock
+A proxy to automatic prepare frames in backgroud, which does not block when reading&writing current frame (multiprocessing). This make your python program more efficient in CPU usage. Up to 2x boost.
 
+> ffmpegcv.VideoCapture(*args) -> ffmpegcv.noblock(ffmpegcv.VideoCapture, *args)
+> ffmpegcv.VideoWriter(*args) -> ffmpegcv.noblock(ffmpegcv.VideoWriter, *args)
 ```python
 #Proxy any VideoCapture args and kargs
-vid_noblock = ffmpegcv.FFmpegReaderNoblock(ffmpegcv.VideoCapture, vfile, pix_fmt='rbg24')
+vid_noblock = ffmpegcv.noblock(ffmpegcv.VideoCapture, vfile, pix_fmt='rbg24')
 
 # this is fast
 def cpu_tense(): time.sleep(0.01)
@@ -345,7 +347,7 @@ for _ in tqdm.trange(1000):
 
 # this is slow
 vid = ffmpegcv.VideoCapture(vfile, pix_fmt='rbg24')
-for _ in tqdm.trange(2000):
+for _ in tqdm.trange(1000):
     ret, img = vid.read()         #this read will block cpu, take time
     cpu_tense()
 ```

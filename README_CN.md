@@ -23,7 +23,7 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
 - `VideoCaptureNV`：使用NVIDIA GPU读取视频文件。
 - `VideoCaptureCAM`：读取摄像头。
 - `VideoCaptureStream`：读取RTP/RTSP/RTMP/HTTP流。
-- `FFmpegReaderNoblock`：在后台读取视频文件（更快）。
+- `noblock`：在后台读取视频文件（更快）,使用多进程。
 
 ## 安装
 在使用ffmpegcv之前，您需要下载`ffmpeg`。
@@ -325,11 +325,14 @@ while True:
 ```
 
 ## FFmpegReaderNoblock
-更快的读取视频。在后台自动准备帧，这样在读取当前帧时不会阻塞。这使得您的Python程序在CPU使用方面更高效。受益于多核CPU。
+更快的读写取视频。利用多进程在后台自动准备帧，这样在读写当前帧时不会阻塞。这使得您的Python程序在CPU使用方面更高效。带来最大翻倍效率提升。
+
+> ffmpegcv.VideoCapture(*args) -> ffmpegcv.noblock(ffmpegcv.VideoCapture, *args)
+> ffmpegcv.VideoWriter(*args) -> ffmpegcv.noblock(ffmpegcv.VideoWriter, *args)
 
 ```python
-# 代理任何VideoCapture的参数和kargs
-vid_noblock = ffmpegcv.FFmpegReaderNoblock(ffmpegcv.VideoCapture, vfile, pix_fmt='rbg24')
+# 代理任何 VideoCapture&VideoWriter 的参数和kargs
+vid_noblock = ffmpegcv.noblock(ffmpegcv.VideoCapture, vfile, pix_fmt='rbg24')
 
 # 这很快
 def cpu_tense(): time.sleep(0.01)
