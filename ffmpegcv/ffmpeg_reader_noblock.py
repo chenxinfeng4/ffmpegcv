@@ -27,7 +27,7 @@ class FFmpegReaderNoblock(FFmpegReader):
         self.shared_array = shared_array
         self.vcap_args = vcap_args
         self.vcap_kwargs = vcap_kwargs
-        self.q = Queue(maxsize=NFRAME-1)
+        self.q = Queue(maxsize=(NFRAME-1)*2)
         self.vcap_fun = vcap_fun
         self.has_init = False
         self.process = None
@@ -41,7 +41,8 @@ class FFmpegReaderNoblock(FFmpegReader):
             process.start()
             self.process = process
         
-        data_id = self.q.get()
+        self.q.get() # 等待子进程写入
+        data_id = self.q.get() # 读取子进程写入的数据
         if data_id is None:
             return False, None
         else:
@@ -52,10 +53,13 @@ class FFmpegReaderNoblock(FFmpegReader):
 def child_process(shared_array, q:Queue, vcap_fun, vcap_args, vcap_kwargs):
     vid = vcap_fun(*vcap_args, **vcap_kwargs)
     np_array = np.frombuffer(shared_array.get_obj(), dtype=np.uint8).reshape((NFRAME,*vid.out_numpy_shape))
+    anything = True
     with vid:
         for i, img in enumerate(vid):
             iloop = i % NFRAME
-            q.put(iloop)
             # 在子进程中修改共享内存的NumPy数组
+            q.put(anything) # 通知主进程可以读取了
             np_array[iloop] = img
+            q.put(iloop)  # 通知主进程已经写入了
+        q.put(anything) # 通知主进程可以读取了
         q.put(None)

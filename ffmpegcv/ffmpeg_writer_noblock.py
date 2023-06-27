@@ -20,9 +20,10 @@ class FFmpegWriterNoblock(FFmpegWriter):
         self.vwriter_fun = vwriter_fun
         self.vwriter_args = vwriter_args
         self.vwriter_kwargs = vwriter_kwargs
-        self.q = Queue(maxsize=NFRAME-1)
+        self.q = Queue(maxsize=(NFRAME-1)*2)
         self.waitInit = True
         self.process = None
+        self._anything = True
 
     def write(self, img:np.ndarray):
         if self.waitInit:
@@ -40,8 +41,9 @@ class FFmpegWriterNoblock(FFmpegWriter):
 
         self.iframe += 1
         data_id = self.iframe % NFRAME
-        self.q.put(data_id)
+        self.q.put(self._anything) # 排队
         self.np_array[data_id] = img
+        self.q.put(data_id)
 
     def _init_share_array(self):
         self.shared_array = Array('b', int(NFRAME*np.prod(self.in_numpy_shape)))
@@ -49,6 +51,7 @@ class FFmpegWriterNoblock(FFmpegWriter):
 
     def release(self):
         if self.process is not None and self.process.is_alive():
+            self.q.put(self._anything)
             self.q.put(None)
             self.process.join()
 
@@ -58,6 +61,7 @@ def child_process(shared_array, q:Queue, in_numpy_shape, vwriter_fun, vwriter_ar
     np_array = np.frombuffer(shared_array.get_obj(), dtype=np.uint8).reshape((NFRAME,*in_numpy_shape))
     with vid:
         while True:
+            q.get() # 等待写入的信号
             data_id = q.get()
             if data_id is None:
                 break
