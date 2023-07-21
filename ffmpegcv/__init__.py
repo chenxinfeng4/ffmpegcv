@@ -2,6 +2,8 @@ from .ffmpeg_reader import FFmpegReader, FFmpegReaderNV
 from .ffmpeg_writer import FFmpegWriter, FFmpegWriterNV
 from .ffmpeg_reader_camera import FFmpegReaderCAM
 from .ffmpeg_reader_stream import FFmpegReaderStream
+from .ffmpeg_reader_stream_realtime import FFmpegReaderStreamRT
+from .ffmpeg_writer_stream_realtime import FFmpegWriterStreamRT
 from .ffmpeg_noblock import noblock
 from .video_info import get_num_NVIDIA_GPUs
 import shutil
@@ -244,6 +246,10 @@ def VideoWriterNV(file, codec=None, fps=30, frameSize=None, pix_fmt="bgr24", gpu
     return FFmpegWriterNV.VideoWriter(file, codec, fps, frameSize, pix_fmt, gpu)
 
 
+def VideoWriterStreamRT(url, pix_fmt="bgr24", bitrate=None):
+    return FFmpegWriterStreamRT.VideoWriter(url, 'libx264', pix_fmt, bitrate)
+
+
 def VideoCaptureCAM(
     camname,
     pix_fmt="bgr24",
@@ -400,3 +406,14 @@ def VideoCaptureStream(
 
 
 VideoReaderStream = VideoCaptureStream
+
+
+def VideoCaptureStreamRT(
+    stream_url,
+    pix_fmt="bgr24",
+    camsize_wh=None
+):
+    assert camsize_wh is not None
+    return FFmpegReaderStreamRT.VideoReader(stream_url, pix_fmt, camsize=camsize_wh)
+
+VideoReaderStreamRT = VideoCaptureStreamRT

@@ -11,6 +11,8 @@ IN_COLAB = "google.colab" in sys.modules
 class FFmpegWriter:
     def __init__(self):
         self.iframe = -1
+        self.size = None
+        self.waitInit = True
 
     def __enter__(self):
         return self
@@ -42,7 +44,6 @@ class FFmpegWriter:
         vid.fps, vid.size = fps, frameSize
         vid.width, vid.height = vid.size if vid.size else (None, None)
         vid.codec, vid.pix_fmt, vid.filename = codec, pix_fmt, filename
-        vid.waitInit = True
         vid.bitrate = bitrate
         return vid
 

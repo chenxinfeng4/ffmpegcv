@@ -13,6 +13,8 @@ from .video_info import (
 class FFmpegReader:
     def __init__(self):
         self.iframe = -1
+        self.waitInit = True
+        self.process = None
 
     def __repr__(self):
         props = pprint.pformat(self.__dict__).replace("{", " ").replace("}", " ")
@@ -114,9 +116,7 @@ class FFmpegReader:
             f"ffmpeg -loglevel warning "
             f' -vcodec {vid.codec} -r {vid.fps} -i "{filename}" '
             f" {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:"
-        )
-
-        vid.process = run_async(vid.ffmpeg_cmd)
+        )  
         vid.size = (vid.width, vid.height)
         vid.pix_fmt = pix_fmt
         assert (not pix_fmt == "yuv420p") or (
@@ -147,6 +147,10 @@ class FFmpegReader:
         return True, img_gray
 
     def read(self):
+        if self.waitInit:
+            self.process = run_async(self.ffmpeg_cmd)
+            self.waitInit = False
+            
         in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
         if not in_bytes:
             self.release()
@@ -267,7 +271,6 @@ class FFmpegReaderNV(FFmpegReader):
             f" {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:"
         )
 
-        vid.process = run_async(vid.ffmpeg_cmd)
         vid.pix_fmt = pix_fmt
         assert (not pix_fmt == "yuv420p") or (
             vid.height % 2 == 0 and vid.width % 2 == 0
