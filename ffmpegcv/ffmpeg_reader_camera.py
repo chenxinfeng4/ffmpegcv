@@ -205,7 +205,7 @@ class ProducerThread(Thread):
 
     def run(self):
         while True:
-            if not self.vid.isopened:
+            if not self.vid.isOpened():
                 break
             ret, img = self.vid.read_()
 
@@ -219,6 +219,7 @@ class ProducerThread(Thread):
 class FFmpegReaderCAM:
     def __init__(self):
         self.iframe = -1
+        self._isopen = True
 
     def __repr__(self):
         props = pprint.pformat(self.__dict__).replace("{", " ").replace("}", " ")
@@ -394,8 +395,6 @@ class FFmpegReaderCAM:
         }[pix_fmt]
         vid.process = run_async(args)
 
-        vid.isopened = True
-
         # producer
         assert step >= 1 and isinstance(step, int)
         vid.step = step
@@ -432,8 +431,11 @@ class FFmpegReaderCAM:
         ret, img = self.q.get()
         return ret, img
 
+    def isOpened(self):
+        return self._isopen
+    
     def release(self):
-        self.isopened = False
+        self._isopen = False
         release_process(self.process)
 
     def close(self):

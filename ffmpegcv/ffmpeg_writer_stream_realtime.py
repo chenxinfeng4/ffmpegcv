@@ -22,5 +22,4 @@ class FFmpegWriterStreamRT(FFmpegWriter):
                 f'{bitrate_str} -f flv '
                 f' -tune zerolatency -preset ultrafast '
                 f' -c:v {self.codec} "{self.filename}"')
-        print(self.ffmpeg_cmd)
         self.process = run_async(self.ffmpeg_cmd)

@@ -17,7 +17,7 @@ class FFmpegReaderStream(FFmpegReaderCAM):
         resize_keepratio,
         resize_keepratioalign,
     ):
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12"]
+        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12", "gray"]
         vid = FFmpegReaderStream()
         videoinfo = get_info(stream_url)
         vid.width, vid.height = videoinfo.width, videoinfo.height
@@ -70,13 +70,14 @@ class FFmpegReaderStream(FFmpegReaderCAM):
                 xpading, ypading = paddings[resize_keepratioalign]
                 padopt = f"pad={dst_width}:{dst_height}:{xpading}:{ypading}:black"
 
-        if any([cropopt, scaleopt, padopt]):
-            filterstr = ",".join(x for x in [cropopt, scaleopt, padopt] if x)
+        pix_fmtopt = 'extractplanes=y' if pix_fmt=='gray' else ''
+        if any([cropopt, scaleopt, padopt, pix_fmtopt]):
+            filterstr = ",".join(x for x in [cropopt, scaleopt, padopt, pix_fmtopt] if x)
             filteropt = f"-vf {filterstr}"
         else:
             filteropt = ""
 
-        args = (
+        vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning "
             f' -vcodec {vid.codec} -i {stream_url} '
             f" {filteropt} -pix_fmt {pix_fmt}  -f rawvideo pipe:"
@@ -91,8 +92,9 @@ class FFmpegReaderStream(FFmpegReaderCAM):
             "bgr24": (vid.height, vid.width, 3),
             "nv12": (int(vid.height * 1.5), vid.width),
             "yuv420p": (int(vid.height * 1.5), vid.width),
+            "gray": (vid.height, vid.width, 1)
         }[pix_fmt]
-        vid.process = run_async(args)
+        vid.process = run_async(vid.ffmpeg_cmd)
 
         vid.isopened = True
 

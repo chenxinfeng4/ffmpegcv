@@ -15,6 +15,7 @@ class FFmpegReader:
         self.iframe = -1
         self.waitInit = True
         self.process = None
+        self._isopen = True
 
     def __repr__(self):
         props = pprint.pformat(self.__dict__).replace("{", " ").replace("}", " ")
@@ -159,7 +160,11 @@ class FFmpegReader:
         img = np.frombuffer(in_bytes, np.uint8).reshape(self.out_numpy_shape)
         return True, img
 
+    def isOpened(self):
+        return self._isopen
+
     def release(self):
+        self._isopen = False
         release_process(self.process)
 
     def close(self):

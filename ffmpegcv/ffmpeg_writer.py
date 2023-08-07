@@ -13,6 +13,7 @@ class FFmpegWriter:
         self.iframe = -1
         self.size = None
         self.waitInit = True
+        self._isopen = True
 
     def __enter__(self):
         return self
@@ -68,7 +69,11 @@ class FFmpegWriter:
         img = img.astype(np.uint8).tobytes()
         self.process.stdin.write(img)
 
+    def isOpened(self):
+        return self._isopen
+
     def release(self):
+        self._isopen = False
         if hasattr(self, "process"):
             release_process(self.process)
 
