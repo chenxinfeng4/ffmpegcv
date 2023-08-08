@@ -52,7 +52,7 @@ def _query_camera_divices_win() -> dict:
     stdout, stderr = process.communicate()
     dshowliststr = stderr.decode("utf-8")
     dshowliststr = dshowliststr.split("DirectShow audio devices")[0]
-    pattern = re.compile(r'\[[^\]]*?\]  "([^"]*)"')
+    pattern = re.compile(r'\[*?\] *"([^"]*)"')
     matches = pattern.findall(dshowliststr)
     alternative_pattern = re.compile(r'Alternative name "(.*)"')
     alternative_names = alternative_pattern.findall(dshowliststr)
