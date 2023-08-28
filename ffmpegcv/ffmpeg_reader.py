@@ -74,7 +74,7 @@ class FFmpegReader:
 
         vid.crop_width, vid.crop_height = crop_w, crop_h
 
-        if resize is None or resize == (vid.crop_width, vid.crop_height):
+        if resize is None or tuple(resize) == (vid.crop_width, vid.crop_height):
             scaleopt = ""
             padopt = ""
         else:
@@ -200,7 +200,7 @@ class FFmpegReaderNV(FFmpegReader):
 
         vid.crop_width, vid.crop_height = crop_w, crop_h
 
-        if resize is None or resize == (vid.crop_width, vid.crop_height):
+        if resize is None or tuple(resize) == (vid.crop_width, vid.crop_height):
             scaleopt = ""
             filteropt = ""
         else:
