@@ -30,10 +30,11 @@ In all, ffmpegcv is just similar to opencv api. But is has more codecs and does'
 You need to download ffmpeg before you can use ffmpegcv.
 ```
  #1A. LINUX: sudo apt install ffmpeg
- #1B. MAC: brew install ffmpeg
+ #1B. MAC (No NVIDIA GPU): brew install ffmpeg
  #1C. WINDOWS: download ffmpeg and add to the path
+ #1D. CONDA: conda install ffmpeg=6.0.0     #don't use the default 4.x.x version
  
- conda install ffmpeg  #1D. CONDA
+ #2. python
  pip install ffmpegcv
  ```
 
@@ -64,12 +65,9 @@ cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
 ```
 
 ## GPU Accelation
-- Support NVIDIA card only.
-- Perfect in the **Windows**. That ffmpeg supports NVIDIA acceleration just by conda install.
-- Struggle in the **Linux**. That ffmpeg didn't orginally support NVIDIA accelerate.
-Please re-compile the ffmpeg by yourself.
-See the [link](https://docs.nvidia.com/video-technologies/video-codec-sdk/ffmpeg-with-nvidia-gpu/)
-- Works in the **Google Colab** notebook without pain (no need to recompile ffmpeg). 
+- Support **NVIDIA** card only, test in x86_64 only.
+- Works in **Windows**, **Linux** and **Anaconda**.
+- Works in the **Google Colab** notebook. 
 - Infeasible in the **MacOS**. That ffmpeg didn't supports NVIDIA at all.
 
 > \* The ffmegcv GPU reader is a bit slower than CPU reader, but much faster when use ROI operations (crop, resize, pad).

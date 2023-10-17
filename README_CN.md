@@ -31,8 +31,9 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
  #1A. LINUX: sudo apt install ffmpeg
  #1B. MAC: brew install ffmpeg
  #1C. WINDOWS: 下载ffmpeg并添加至环境变量的路径中
+ #1D. CONDA: conda install ffmpeg=6.0.0
  
- conda install ffmpeg  #1D. CONDA
+ #2. python
  pip install ffmpegcv
  ```
 
@@ -64,11 +65,10 @@ cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
 ```
 
 ## GPU加速
-- 仅支持NVIDIA显卡。
-- 在**Windows**上完美支持。只需通过conda install安装ffmpeg即可支持NVIDIA加速。
-- 在**Linux**上有些困难。原始的ffmpeg不支持NVIDIA加速，您需要自己重新编译ffmpeg。详见[链接](https://docs.nvidia.com/video-technologies/video-codec-sdk/ffmpeg-with-nvidia-gpu/)
-- 在**Google Colab**笔记本上无需繁琐操作（无需重新编译ffmpeg）即可运行。
-- 在**MacOS**上无法进行NVIDIA加速，因为ffmpeg根本就不支持NVIDIA。
+- 仅支持NVIDIA显卡，在 x86_64 上测试。
+- 原生支持**Windows**, **Linux**, **Anaconda**。
+- 在**Google Colab**上顺利运行。
+- 在**MacOS**仅能使用CPU功能，上无法进行GPU加速，因为Mac根本就不支持NVIDIA。
 
 > 在CPU数量充足的条件下，GPU读取速度可能比CPU读取速度稍慢。在使用感兴趣区域（ROI）操作（裁剪、调整大小、填充）时，GPU优势更凸显。
 
