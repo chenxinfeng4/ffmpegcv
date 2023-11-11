@@ -76,7 +76,7 @@ def encoder_to_nvidia(codec):
         raise Exception("No NV codec found for %s" % codec)
 
 
-def encoder_to_qsv(code):
+def encoder_to_qsv(codec):
     codec_map = {
         "h264": "h264_qsv",
         "hevc": "hevc_qsv",
@@ -117,7 +117,7 @@ def decoder_to_nvidia(codec):
         raise Exception("No NV codec found for %s" % codec)
 
 
-def decoder_to_qsv(code):
+def decoder_to_qsv(codec):
     codec_map = {
         "av1": "av1_qsv",
         "h264": "h264_qsv",

@@ -19,8 +19,8 @@ class FFmpegReaderQSV(FFmpegReader):
         vid.codec = videoinfo.codec
         assert crop_xywh is None, 'Function not implemented yet'
         assert resize is None, 'Function not implemented yet'
-        assert resize_keepratio is None, 'Function not implemented yet'
-        assert resize_keepratioalign is None, 'Function not implemented yet'
+        assert resize_keepratio is None or resize_keepratio==True, 'Function not implemented yet'
+        assert resize_keepratioalign is None or resize_keepratioalign=="center", 'Function not implemented yet'
         assert vid.origin_height % 2 == 0, "height must be even"
         assert vid.origin_width % 2 == 0, "width must be even"
         if crop_xywh:
