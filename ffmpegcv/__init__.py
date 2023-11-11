@@ -4,11 +4,14 @@ from .ffmpeg_reader_camera import FFmpegReaderCAM
 from .ffmpeg_reader_stream import FFmpegReaderStream
 from .ffmpeg_reader_stream_realtime import FFmpegReaderStreamRT
 from .ffmpeg_writer_stream_realtime import FFmpegWriterStreamRT
+from .ffmpeg_reader_qsv import FFmpegReaderQSV
+from .ffmpeg_writer_qsv import FFmpegWriterQSV
 from .ffmpeg_noblock import noblock
 from .video_info import get_num_NVIDIA_GPUs
 import shutil
 from subprocess import DEVNULL, check_output
 
+from .version import __version__ 
 
 def _check():
     if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
@@ -23,7 +26,6 @@ _check()
 
 _check_nvidia_init = None
 
-__version__ = '0.3.3'
 def _check_nvidia():
     global _check_nvidia_init
     run = lambda x: check_output(x, shell=True, stderr=DEVNULL)
@@ -240,12 +242,39 @@ def VideoCaptureNV(
 VideoReaderNV = VideoCaptureNV
 
 
+def VideoCaptureQSV(
+    file,
+    pix_fmt="bgr24",
+    crop_xywh=None,
+    resize=None,
+    resize_keepratio=True,
+    resize_keepratioalign="center",
+    gpu=0,
+):
+    """
+    `ffmpegcv.VideoCaptureQSV` is a gpu version for `ffmpegcv.VideoCapture`.
+    """
+    return FFmpegReaderQSV.VideoReader(
+        file, pix_fmt, crop_xywh, resize, resize_keepratio, resize_keepratioalign, gpu
+    )
+
+
+VideoReaderQSV = VideoCaptureQSV
+
+
 def VideoWriterNV(file, codec=None, fps=30, frameSize=None, pix_fmt="bgr24", gpu=0, bitrate=None):
     """
     `ffmpegcv.VideoWriterNV` is a gpu version for `ffmpegcv.VideoWriter`.
     """
     _check_nvidia()
     return FFmpegWriterNV.VideoWriter(file, codec, fps, frameSize, pix_fmt, gpu, bitrate)
+
+
+def VideoWriterQSV(file, codec=None, fps=30, frameSize=None, pix_fmt="bgr24", gpu=0, bitrate=None):
+    """
+    `ffmpegcv.VideoWriterQSV` is a gpu version for `ffmpegcv.VideoWriter`.
+    """
+    return FFmpegWriterQSV.VideoWriter(file, codec, fps, frameSize, pix_fmt, gpu, bitrate)
 
 
 def VideoWriterStreamRT(url, pix_fmt="bgr24", bitrate=None):
