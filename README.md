@@ -11,7 +11,7 @@ English Version | [中文版本](./README_CN.md)
 The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2.
 
 - The ffmpegcv is api **compatible** to open-cv. 
-- The ffmpegcv can use **GPU accelerate** encoding and decoding*. 
+- The ffmpegcv can use **GPU accelerate** encoding and decoding*. (NVIDIA, INTEL GPU)
 - The ffmpegcv support much more video **codecs** v.s. open-cv.
 - The ffmpegcv support **RGB** & BGR & GRAY format as you like.
 - The ffmpegcv can support ROI operations.You can **crop**, **resize** and **pad** the ROI.
@@ -22,6 +22,7 @@ In all, ffmpegcv is just similar to opencv api. But is has more codecs and does'
 - `VideoWriter`: Write a video file.
 - `VideoCapture`: Read a video file.
 - `VideoCaptureNV`: Read a video file by NVIDIA GPU.
+- `VideoCaptureQSV`: Read a video file by Intel QuickSync Video.
 - `VideoCaptureCAM`: Read a camera.
 - `VideoCaptureStream`: Read a RTP/RTSP/RTMP/HTTP stream.
 - `noblock`: Read/Write a video file in background using mulitprocssing.
@@ -131,6 +132,7 @@ cap_cpu = ffmpegcv.VideoCapture(file)
 cap_gpu = ffmpegcv.VideoCapture(file, codec='h264_cuvid') #NVIDIA GPU0
 cap_gpu0 = ffmpegcv.VideoCaptureNV(file)         #NVIDIA GPU0
 cap_gpu1 = ffmpegcv.VideoCaptureNV(file, gpu=1)  #NVIDIA GPU1
+cap_qsv = ffmpegcv.VideoCaptureQSV(file)         #Intel QSV, experimental
 ```
 
 Use `rgb24` instead of `bgr24`. The `gray` version would be more efficient.
@@ -194,6 +196,7 @@ Use GPU to accelerate encoding. Such as h264_nvenc, hevc_nvenc.
 out_cpu = ffmpegcv.VideoWriter('outpy.mp4', None, 10)
 out_gpu0 = ffmpegcv.VideoWriterNV('outpy.mp4', 'h264', 10)        #NVIDIA GPU0
 out_gpu1 = ffmpegcv.VideoWriterNV('outpy.mp4', 'hevc', 10, gpu=1) #NVIDIA GPU1
+out_qsv  = ffmpegcv.VideoWriterQSV('outpy.mp4', 'h264', 10)        #Intel QSV, experimental
 ```
 
 Input image is rgb24 instead of bgr24

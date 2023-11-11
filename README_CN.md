@@ -21,6 +21,7 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
 - `VideoWriter`：写入视频文件。
 - `VideoCapture`：读取视频文件。
 - `VideoCaptureNV`：使用NVIDIA GPU读取视频文件。
+- `VideoCaptureQSV`: 使用Intel集成显卡读取视频文件.
 - `VideoCaptureCAM`：读取摄像头。
 - `VideoCaptureStream`：读取RTP/RTSP/RTMP/HTTP流。
 - `noblock`：在后台读取视频文件（更快）,使用多进程。
@@ -131,6 +132,7 @@ cap_cpu = ffmpegcv.VideoCapture(file)
 cap_gpu = ffmpegcv.VideoCapture(file, codec='h264_cuvid') # NVIDIA GPU0
 cap_gpu0 = ffmpegcv.VideoCaptureNV(file)                # NVIDIA GPU0
 cap_gpu1 = ffmpegcv.VideoCaptureNV(file, gpu=1)         # NVIDIA GPU1
+cap_qsv = ffmpegcv.VideoCaptureQSV(file)                #Intel QSV, 测试中
 ```
 
 使用`rgb24`代替`bgr24`。`gray`版本会更高效。
@@ -193,6 +195,7 @@ with ffmpegcv.VideoWriter('outpy.mp4', None, 10) as out:
 out_cpu = ffmpegcv.VideoWriter('outpy.mp4', None, 10)
 out_gpu0 = ffmpegcv.VideoWriterNV('outpy.mp4', 'h264', 10)        # NVIDIA GPU0
 out_gpu1 = ffmpegcv.VideoWriterNV('outpy.mp4', 'hevc', 10, gpu=1) # NVIDIA GPU1
+out_qsv  = ffmpegcv.VideoWriterQSV('outpy.mp4', 'h264', 10)        #Intel QSV, 测试中
 ```
 
 输入图像使用rgb24而不是bgr24。
