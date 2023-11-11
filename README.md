@@ -24,7 +24,7 @@ In all, ffmpegcv is just similar to opencv api. But is has more codecs and does'
 - `VideoCaptureNV`: Read a video file by NVIDIA GPU.
 - `VideoCaptureCAM`: Read a camera.
 - `VideoCaptureStream`: Read a RTP/RTSP/RTMP/HTTP stream.
-- `noblck`: Read/Write a video file in background using mulitprocssing.
+- `noblock`: Read/Write a video file in background using mulitprocssing.
 
 ## Install
 You need to download ffmpeg before you can use ffmpegcv.
