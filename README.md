@@ -11,7 +11,7 @@ English Version | [中文版本](./README_CN.md)
 The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2.
 
 - The ffmpegcv is api **compatible** to open-cv. 
-- The ffmpegcv can use **GPU accelerate** encoding and decoding*. (NVIDIA, INTEL GPU)
+- The ffmpegcv can use **GPU accelerate** encoding and decoding*.
 - The ffmpegcv support much more video **codecs** v.s. open-cv.
 - The ffmpegcv support **RGB** & BGR & GRAY format as you like.
 - The ffmpegcv can support ROI operations.You can **crop**, **resize** and **pad** the ROI.

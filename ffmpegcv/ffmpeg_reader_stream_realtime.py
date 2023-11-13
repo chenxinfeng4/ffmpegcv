@@ -19,8 +19,10 @@ class FFmpegReaderStreamRT(FFmpegReaderCAM):
 
         vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning "
+            '-rtsp_transport tcp '
             '-fflags nobuffer -flags low_delay -strict experimental '
-            f' -i {stream_url} -vf extractplanes=y '
+            f' -i {stream_url}'
+            #'-vf extractplanes=y '
             f" -pix_fmt {pix_fmt}  -f rawvideo pipe:"
         )
 
