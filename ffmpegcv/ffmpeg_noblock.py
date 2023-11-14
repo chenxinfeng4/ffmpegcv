@@ -20,7 +20,7 @@ def noblock(fun:Callable, *v_args, **v_kargs):
     return proxyfun
 
 
-class ReadLast(threading.Thread, ffmpegcv.FFmpegReader):
+class ReadLiveLast(threading.Thread, ffmpegcv.FFmpegReader):
     def __init__(self, fun, *args, **kvargs):
         threading.Thread.__init__(self)
         ffmpegcv.FFmpegReader.__init__(self)
