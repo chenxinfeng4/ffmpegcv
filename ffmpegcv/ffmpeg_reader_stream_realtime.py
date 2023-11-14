@@ -22,7 +22,6 @@ class FFmpegReaderStreamRT(FFmpegReaderCAM):
             '-rtsp_transport tcp '
             '-fflags nobuffer -flags low_delay -strict experimental '
             f' -i {stream_url}'
-            #'-vf extractplanes=y '
             f" -pix_fmt {pix_fmt}  -f rawvideo pipe:"
         )
 
@@ -40,11 +39,6 @@ class FFmpegReaderStreamRT(FFmpegReaderCAM):
         }[pix_fmt]
         vid.process = run_async(vid.ffmpeg_cmd)
         vid.isopened = True
-        # producer
-        # vid.step = 1
-        # vid.q = Queue(maxsize=30)
-        # producer = ProducerThread(vid, vid.q)
-        # producer.start()
         return vid
 
     def read(self):
