@@ -21,6 +21,9 @@ def get_info(video:str):
     assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
     vinfo = root[0][0].attrib
 
+    if ('nb_frames' not in vinfo) :
+        vinfo['nb_frames'] = 0
+
     VideoInfo = namedtuple(
         "VideoInfo", ["width", "height", "fps", "count", "codec", "duration"]
     )
