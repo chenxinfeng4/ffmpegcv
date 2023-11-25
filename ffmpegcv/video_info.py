@@ -14,12 +14,21 @@ _num_QSV_GPUs = -1
 
 def get_info(video:str):
     do_scan_the_whole = video.split('.')[-1] in scan_the_whole
-    use_count_packets = '-count_packets' if do_scan_the_whole else ''
-    cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams "{}"'.format(use_count_packets, video)
-    output = subprocess.check_output(cmd, shell=True)
-    root = ET.fromstring(output)
-    assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
-    vinfo = root[0][0].attrib
+
+    def ffprobe_info_(do_scan_the_whole):
+        use_count_packets = '-count_packets' if do_scan_the_whole else ''
+        cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams "{}"'.format(use_count_packets, video)
+        output = subprocess.check_output(cmd, shell=True)
+        root = ET.fromstring(output)
+        assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
+        vinfo = root[0][0].attrib
+        return vinfo
+    
+    vinfo = ffprobe_info_(do_scan_the_whole)
+
+    if 'nb_frames' not in vinfo:
+        do_scan_the_whole = True
+        vinfo = ffprobe_info_(do_scan_the_whole)
 
     VideoInfo = namedtuple(
         "VideoInfo", ["width", "height", "fps", "count", "codec", "duration"]
