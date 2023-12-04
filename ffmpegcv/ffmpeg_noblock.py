@@ -44,5 +44,5 @@ class ReadLiveLast(threading.Thread, ffmpegcv.FFmpegReader):
     def run(self):
         while self._isopen:
             self.ret, self.img = self.vid.read()
-            if self.ret:
+            if not self.ret:
                 break
