@@ -49,7 +49,7 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
 通过CPU读取视频，并通过GPU重写视频。
 ```python
 vidin = ffmpegcv.VideoCapture(vfile_in)
-vidout = ffmpegcv.VideoWriterNV(vfile_out, 'h264', vidin.fps)
+vidout = ffmpegcv.VideoWriterNV(vfile_out, 'h264', vidin.fps)  #NVIDIA 显卡
 
 with vidin, vidout:
     for frame in vidin:
@@ -293,7 +293,7 @@ cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', camsize_wh=(1280,720), camf
 
 2. 在Linux上VideoCaptureCAM无法列出FPS，因为`ffmpeg`无法使用Linux本机的`v4l2`模块查询设备的FPS。不过，让FPS为空也没问题。
 
-## 流读取器
+## 流读取器 （直播流，IP摄像头）
 **实验性功能**。ffmpegcv提供了流读取器，与VideoFile读取器一致，更类似于相机。
 
 - 支持`RTSP`、`RTP`、`RTMP`、`HTTP`、`HTTPS`流。

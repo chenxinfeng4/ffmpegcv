@@ -49,7 +49,7 @@ You need to download ffmpeg before you can use ffmpegcv.
 Read a video by CPU, and rewrite it by GPU.
 ```python
 vidin = ffmpegcv.VideoCapture(vfile_in)
-vidout = ffmpegcv.VideoWriterNV(vfile_out, 'h264', vidin.fps)
+vidout = ffmpegcv.VideoWriterNV(vfile_out, 'h264', vidin.fps)  #NVIDIA-GPU
 
 with vidin, vidout:
     for frame in vidin:
@@ -295,7 +295,7 @@ cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', camsize_wh=(1280,720), camf
 2. The VideoCaptureCAM cann't list the FPS in linux. Because the `ffmpeg` cound't query the device's FPS using linux native `v4l2` module. However, it's just OK to let the FPS empty.
 
 
-## Stream Reader
+## Stream Reader (Live streaming, RTSP IP cameras)
 **Experimental feature**. The ffmpegcv offers Stream reader. Which is consistent with VideoFiler reader, and more similiar to the camera.
 Becareful when using it.
 
