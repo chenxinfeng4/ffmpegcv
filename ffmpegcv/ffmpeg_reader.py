@@ -53,7 +53,7 @@ class FFmpegReader:
         assert os.path.exists(filename) and os.path.isfile(
             filename
         ), f"{filename} not exists"
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12", "gray"]
+        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "yuvj420p", "nv12", "gray"]
 
         vid = FFmpegReader()
         videoinfo = get_info(filename)
@@ -128,6 +128,7 @@ class FFmpegReader:
             "bgr24": (vid.height, vid.width, 3),
             "nv12": (int(vid.height * 1.5), vid.width),
             "yuv420p": (int(vid.height * 1.5), vid.width),
+            "yuvj420p":  (int(vid.height * 1.5), vid.width),
             "gray": (vid.height, vid.width, 1)
         }[pix_fmt]
         return vid

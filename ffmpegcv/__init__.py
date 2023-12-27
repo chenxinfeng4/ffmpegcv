@@ -377,6 +377,7 @@ VideoReaderCAM = VideoCaptureCAM
 
 def VideoCaptureStream(
     stream_url,
+    codec=None,
     pix_fmt="bgr24",
     crop_xywh=None,
     resize=None,
@@ -428,6 +429,7 @@ def VideoCaptureStream(
     """
     return FFmpegReaderStream.VideoReader(
         stream_url,
+        codec,
         pix_fmt,
         crop_xywh,
         resize,

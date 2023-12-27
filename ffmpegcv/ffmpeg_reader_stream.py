@@ -11,6 +11,7 @@ class FFmpegReaderStream(FFmpegReaderCAM):
     @staticmethod
     def VideoReader(
         stream_url,
+        codec,
         pix_fmt,
         crop_xywh,
         resize,
@@ -22,7 +23,7 @@ class FFmpegReaderStream(FFmpegReaderCAM):
         videoinfo = get_info(stream_url)
         vid.width, vid.height = videoinfo.width, videoinfo.height
         vid.fps = videoinfo.fps
-        vid.codec = videoinfo.codec
+        vid.codec = codec if codec else videoinfo.codec
         vid.count = videoinfo.count
         vid.duration = videoinfo.duration
 
