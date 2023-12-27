@@ -443,10 +443,22 @@ VideoReaderStream = VideoCaptureStream
 
 def VideoCaptureStreamRT(
     stream_url,
+    codec=None,
     pix_fmt="bgr24",
-    camsize_wh=None
+    crop_xywh=None,
+    resize=None,
+    resize_keepratio=True,
+    resize_keepratioalign="center",
 ):
-    assert camsize_wh is not None
-    return FFmpegReaderStreamRT.VideoReader(stream_url, pix_fmt, camsize=camsize_wh)
+    return FFmpegReaderStreamRT.VideoReader(
+        stream_url, 
+        codec, 
+        pix_fmt,
+        crop_xywh,
+        resize,
+        resize_keepratio,
+        resize_keepratioalign
+    )
+
 
 VideoReaderStreamRT = VideoCaptureStreamRT

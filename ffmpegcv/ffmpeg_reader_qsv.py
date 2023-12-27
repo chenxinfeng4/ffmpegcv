@@ -1,5 +1,5 @@
 import os
-from ffmpegcv.ffmpeg_reader import FFmpegReader
+from ffmpegcv.ffmpeg_reader import FFmpegReader, get_videofilter_cpu, get_outnumpyshape
 from .video_info import (
     get_info,
     get_num_QSV_GPUs,
@@ -8,44 +8,6 @@ from .video_info import (
 
 
 class FFmpegReaderQSV(FFmpegReader):
-    def _get_opts(
-        vid, videoinfo, crop_xywh, resize, resize_keepratio, resize_keepratioalign, isgray
-    ):
-        vid.origin_width = videoinfo.width
-        vid.origin_height = videoinfo.height
-        vid.fps = videoinfo.fps
-        vid.count = videoinfo.count
-        vid.width, vid.height = vid.origin_width, vid.origin_height
-        vid.codec = videoinfo.codec
-        assert crop_xywh is None, 'Function not implemented yet'
-        assert resize is None, 'Function not implemented yet'
-        assert resize_keepratio is None or resize_keepratio==True, 'Function not implemented yet'
-        assert resize_keepratioalign is None or resize_keepratioalign=="center", 'Function not implemented yet'
-        assert vid.origin_height % 2 == 0, "height must be even"
-        assert vid.origin_width % 2 == 0, "width must be even"
-        if crop_xywh:
-            pass
-        else:
-            crop_w, crop_h = vid.origin_width, vid.origin_height
-            cropopt = ""
-
-        vid.crop_width, vid.crop_height = crop_w, crop_h
-
-        if resize is None or tuple(resize) == (vid.crop_width, vid.crop_height):
-            scaleopt = ""
-            filteropt = ""
-        else:
-            pass
-
-        if isgray:
-            if filteropt:
-                filteropt=f'{filteropt},extractplanes=y'
-            else:
-                filteropt=f'-vf extractplanes=y'
-        
-        vid.size = (vid.width, vid.height)
-        return cropopt, scaleopt, filteropt
-
     @staticmethod
     def VideoReader(
         filename,
@@ -71,13 +33,20 @@ class FFmpegReaderQSV(FFmpegReader):
         assert (
             resize is None or len(resize) == 2
         ), "resize must be a tuple of (width, height)"
-        videoinfo = get_info(filename)
+
         vid = FFmpegReaderQSV()
-        isgray = pix_fmt == "gray"
-        cropopt, scaleopt, filteropt = vid._get_opts(
-            videoinfo, crop_xywh, resize, resize_keepratio, resize_keepratioalign, isgray
-        )
-        vid.codecQSV = decoder_to_qsv(vid.codec)
+        videoinfo = get_info(filename)
+        vid.origin_width = videoinfo.width
+        vid.origin_height = videoinfo.height
+        vid.fps = videoinfo.fps
+        vid.count = videoinfo.count
+        vid.codecQSV = decoder_to_qsv(videoinfo.codec)
+        vid.pix_fmt = pix_fmt
+
+        (vid.crop_width, vid.crop_height), (vid.width, vid.height), filteropt = get_videofilter_cpu(
+                (vid.origin_width, vid.origin_height), pix_fmt, crop_xywh, resize, 
+                resize_keepratio, resize_keepratioalign)
+        vid.size = (vid.width, vid.height)
 
         vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning "
@@ -85,15 +54,5 @@ class FFmpegReaderQSV(FFmpegReader):
             f" {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:"
         )
 
-        vid.pix_fmt = pix_fmt
-        assert (not pix_fmt == "yuv420p") or (
-            vid.height % 2 == 0 and vid.width % 2 == 0
-        ), "yuv420p must be even"
-        vid.out_numpy_shape = {
-            "rgb24": (vid.height, vid.width, 3),
-            "bgr24": (vid.height, vid.width, 3),
-            "yuv420p": (int(vid.height * 1.5), vid.width),
-            "nv12": (int(vid.height * 1.5), vid.width),
-            "gray": (vid.height, vid.width, 1)
-        }[pix_fmt]
+        vid.out_numpy_shape = get_outnumpyshape(vid.size, pix_fmt)
         return vid

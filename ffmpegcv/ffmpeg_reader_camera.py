@@ -7,6 +7,7 @@ from threading import Thread
 from queue import Queue
 import sys
 import os
+from ffmpegcv.ffmpeg_reader import get_videofilter_cpu, get_outnumpyshape
 
 
 class platform:
@@ -290,7 +291,7 @@ class FFmpegReaderCAM:
             camsize_wh = max(resolutions, key=lambda x: sum(x))
 
         assert len(camsize_wh) == 2
-        vid.width, vid.height = camsize_wh
+        vid.origin_width, vid.origin_height = camsize_wh
 
         opt_camfps = f" -framerate {camfps} " if camfps else ""
         vid.camfps = camfps if camfps else None
@@ -302,6 +303,7 @@ class FFmpegReaderCAM:
         }[this_os]
         opt_camcodec = f" -{opt_camcodec_} {camcodec} " if camcodec else ""
         vid.camcodec = camcodec if camcodec else None
+        vid.pix_fmt = pix_fmt
 
         opt_campix_fmt_ = {
             platform.linux: "input_format",
@@ -317,55 +319,9 @@ class FFmpegReaderCAM:
             platform.mac: f"{camid}:none",
         }[this_os]
 
-        vid.origin_width, vid.origin_height = vid.width, vid.height
-        if crop_xywh:
-            crop_w, crop_h = crop_xywh[2:]
-            vid.width, vid.height = crop_w, crop_h
-            x, y, w, h = crop_xywh
-            cropopt = f"crop={w}:{h}:{x}:{y}"
-        else:
-            crop_w, crop_h = vid.origin_width, vid.origin_height
-            cropopt = ""
-
-        vid.crop_width, vid.crop_height = crop_w, crop_h
-
-        if resize is None or resize == (vid.crop_width, vid.crop_height):
-            scaleopt = ""
-            padopt = ""
-        else:
-            vid.width, vid.height = dst_width, dst_height = resize
-            if not resize_keepratio:
-                scaleopt = f"scale={dst_width}x{dst_height}"
-                padopt = ""
-            else:
-                re_width, re_height = crop_w / (crop_h / dst_height), dst_height
-                if re_width > dst_width:
-                    re_width, re_height = dst_width, crop_h / (crop_w / dst_width)
-                re_width, re_height = int(re_width), int(re_height)
-                scaleopt = f"scale={re_width}x{re_height}"
-                if resize_keepratioalign is None:
-                    resize_keepratioalign = "center"
-                paddings = {
-                    "center": (
-                        (dst_width - re_width) // 2,
-                        (dst_height - re_height) // 2,
-                    ),
-                    "topleft": (0, 0),
-                    "topright": (dst_width - re_width, 0),
-                    "bottomleft": (0, dst_height - re_height),
-                    "bottomright": (dst_width - re_width, dst_height - re_height),
-                }
-                assert (
-                    resize_keepratioalign in paddings
-                ), 'resize_keepratioalign must be one of "center"(mmpose), "topleft"(mmdetection), "topright", "bottomleft", "bottomright"'
-                xpading, ypading = paddings[resize_keepratioalign]
-                padopt = f"pad={dst_width}:{dst_height}:{xpading}:{ypading}:black"
-
-        if any([cropopt, scaleopt, padopt]):
-            filterstr = ",".join(x for x in [cropopt, scaleopt, padopt] if x)
-            filteropt = f"-vf {filterstr}"
-        else:
-            filteropt = ""
+        (vid.crop_width, vid.crop_height), (vid.width, vid.height), filteropt = get_videofilter_cpu(
+                (vid.origin_width, vid.origin_height), crop_xywh, resize, resize_keepratio, resize_keepratioalign)
+        vid.size = (vid.width, vid.height)
 
         opt_driver_ = {
             platform.linux: "v4l2",
@@ -382,17 +338,7 @@ class FFmpegReaderCAM:
             f" {filteropt} -pix_fmt {pix_fmt} -f rawvideo pipe:"
         )
 
-        vid.size = (vid.width, vid.height)
-        vid.pix_fmt = pix_fmt
-        assert (not pix_fmt == "yuv420p") or (
-            vid.height % 2 == 0 and vid.width % 2 == 0
-        ), "yuv420p must be even"
-        vid.out_numpy_shape = {
-            "rgb24": (vid.height, vid.width, 3),
-            "bgr24": (vid.height, vid.width, 3),
-            "yuv420p": (int(vid.height * 1.5), vid.width),
-            "nv12": (int(vid.height * 1.5), vid.width),
-        }[pix_fmt]
+        vid.out_numpy_shape = get_outnumpyshape(vid.size, pix_fmt)
         vid.process = run_async(args)
 
         # producer
@@ -414,18 +360,6 @@ class FFmpegReaderCAM:
         img = None
         img = np.frombuffer(in_bytes, np.uint8).reshape(self.out_numpy_shape)
         return True, img
-
-    def read_gray(self):
-        # It's an experimental function
-        # return 'ret, img_gray'
-        # img_gray: Height x Width x 1
-        assert self.pix_fmt in ("nv12", "yuv420p")
-        ret, img = self.read()
-        if not ret:
-            return False, None
-        assert img.shape == (int(self.height * 1.5), self.width)
-        img_gray = img[: self.height, :, None]
-        return True, img_gray
 
     def read(self):
         ret, img = self.q.get()
