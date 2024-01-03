@@ -58,14 +58,20 @@ class FFmpegWriter:
 
     def write(self, img:np.ndarray):
         if self.waitInit:
-            if self.size is None:
-                self.size = (img.shape[1], img.shape[0])
-            self.width, self.height = self.size
+            if self.pix_fmt in ('nv12', 'yuv420p', 'yuvj420p'):
+                assert width%2==0 and height_15*2%3==0
+                height_15, width = img.shape[:2]
+                height = int(height_15 / 1.5)
+            else:
+                height, width = img.shape[:2]
+            self.width, self.height = width, height
+            self.in_numpy_shape = img.shape
+            self.size = (width, height)
             self._init_video_stream()
             self.waitInit = False
 
         self.iframe += 1
-        assert self.size == (img.shape[1], img.shape[0])
+        assert self.in_numpy_shape == img.shape
         img = img.astype(np.uint8).tobytes()
         self.process.stdin.write(img)
 
