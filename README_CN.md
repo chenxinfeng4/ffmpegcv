@@ -335,7 +335,6 @@ cap = ffmpegcv.VideoCaptureStreamRT(stream_url)                 # 低延迟 & �
 cap = ffmpegcv.ReadLiveLast(ffmpegcv.VideoCaptureStreamRT, stream_url) #不缓存
 while True:
     ret, frame = cap.read()
-    time.sleep(1/30)
     if not ret:
         break
     pass

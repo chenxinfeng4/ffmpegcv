@@ -345,7 +345,6 @@ cap = ffmpegcv.VideoCaptureStreamRT(stream_url)  # Low latency & recent buffered
 cap = ffmpegcv.ReadLiveLast(ffmpegcv.VideoCaptureStreamRT, stream_url) #no buffer
 while True:
     ret, frame = cap.read()
-    time.sleep(1/30)
     if not ret:
         break
     pass
