@@ -14,6 +14,7 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
 - ffmpegcv可以使用**GPU加速**编码和解码。
 - ffmpegcv支持比open-cv更多的**视频编码器**。
 - ffmpegcv原生支持**RGB**/BGR/灰度像素格式。
+- ffmpegcv支持网络**流视频读取** (网线监控相机)。
 - ffmpegcv支持ROI（感兴趣区域）操作，可以对ROI进行**裁剪**、**调整大小**和**填充**。
 总之，ffmpegcv与opencv的API非常相似。但它具有更多的编码器，并且不需要安装opencv。
 
@@ -24,6 +25,7 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
 - `VideoCaptureQSV`: 使用Intel集成显卡读取视频文件.
 - `VideoCaptureCAM`：读取摄像头。
 - `VideoCaptureStream`：读取RTP/RTSP/RTMP/HTTP流。
+- `VideoCaptureStreamRT`: 读取RTSP流 (网线监控相机)，实时、低延迟。
 - `noblock`：在后台读取视频文件（更快）,使用多进程。
 
 ## 安装
@@ -293,7 +295,7 @@ cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', camsize_wh=(1280,720), camf
 
 2. 在Linux上VideoCaptureCAM无法列出FPS，因为`ffmpeg`无法使用Linux本机的`v4l2`模块查询设备的FPS。不过，让FPS为空也没问题。
 
-## 流读取器 （直播流，IP摄像头）
+## 流读取器 （直播流，网络监控摄像头）
 **实验性功能**。ffmpegcv提供了流读取器，与VideoFile读取器一致，更类似于相机。
 
 - 支持`RTSP`、`RTP`、`RTMP`、`HTTP`、`HTTPS`流。
@@ -322,6 +324,18 @@ import ffmpegcv
 cap = ffmpegcv.VideoCaptureStream(stream_url)
 while True:
     ret, frame = cap.read()
+    if not ret:
+        break
+    pass
+
+# ffmpegcv, 网络监控摄像头
+# 例如 海康威视, `101` 主视频流, `102` 子视频流
+stream_url = 'rtsp://admin:PASSWD@192.168.1.xxx:8554/Streaming/Channels/102'
+cap = ffmpegcv.VideoCaptureStreamRT(stream_url)                 # 低延迟 & 缓存
+cap = ffmpegcv.ReadLiveLast(ffmpegcv.VideoCaptureStreamRT, stream_url) #不缓存
+while True:
+    ret, frame = cap.read()
+    time.sleep(1/30)
     if not ret:
         break
     pass

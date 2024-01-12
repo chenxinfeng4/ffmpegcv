@@ -28,7 +28,7 @@ class FFmpegReaderNoblock(FFmpegReader):
         self.shared_array = shared_array
         self.vcap_args = vcap_args
         self.vcap_kwargs = vcap_kwargs
-        self.q = Queue(maxsize=(NFRAME-1)*2)
+        self.q = Queue(maxsize=(NFRAME-2)*2)
         self.vcap_fun = vcap_fun
         self.has_init = False
         self.process = None

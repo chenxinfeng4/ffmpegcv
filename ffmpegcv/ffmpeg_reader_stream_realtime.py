@@ -34,9 +34,10 @@ class FFmpegReaderStreamRT(FFmpegReader):
                 resize_keepratio, resize_keepratioalign)
         vid.size = (vid.width, vid.height)
 
+        rtsp_opt = '-rtsp_transport tcp ' if stream_url.startswith('rtsp://') else ''
         vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning "
-            '-rtsp_transport tcp '
+            f' {rtsp_opt} '
             '-fflags nobuffer -flags low_delay -strict experimental '
             f' -vcodec {vid.codec} -i {stream_url}'
             f" {filteropt} -pix_fmt {pix_fmt}  -f rawvideo pipe:"

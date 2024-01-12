@@ -6,7 +6,7 @@ from .ffmpeg_reader_stream_realtime import FFmpegReaderStreamRT
 from .ffmpeg_writer_stream_realtime import FFmpegWriterStreamRT
 from .ffmpeg_reader_qsv import FFmpegReaderQSV
 from .ffmpeg_writer_qsv import FFmpegWriterQSV
-from .ffmpeg_noblock import noblock
+from .ffmpeg_noblock import noblock, ReadLiveLast
 from .video_info import get_num_NVIDIA_GPUs
 import shutil
 from subprocess import DEVNULL, check_output

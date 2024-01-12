@@ -205,16 +205,15 @@ class ProducerThread(Thread):
         self.q = q
 
     def run(self):
+        q = self.q
         while True:
             if not self.vid.isOpened():
                 break
             ret, img = self.vid.read_()
 
-            try:
-                self.q.put_nowait((ret, img))  # drop frames
-            except Exception:
-                pass
-            continue
+            if q.full():
+                q.get() # drop frames
+            q.put((ret, img))  
 
 
 class FFmpegReaderCAM:

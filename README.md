@@ -65,6 +65,8 @@ cap = ffmpegcv.VideoCaptureCAM(0)
 cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
 ```
 
+## Cross platform
+
 ## GPU Accelation
 - Support **NVIDIA** card only, test in x86_64 only.
 - Works in **Windows**, **Linux** and **Anaconda**.
