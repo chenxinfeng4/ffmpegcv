@@ -14,6 +14,7 @@ The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which ar
 - The ffmpegcv can use **GPU accelerate** encoding and decoding*.
 - The ffmpegcv support much more video **codecs** v.s. open-cv.
 - The ffmpegcv support **RGB** & BGR & GRAY format as you like.
+- The ffmpegcv support **Stream reading** (IP Camera) in low latency.
 - The ffmpegcv can support ROI operations.You can **crop**, **resize** and **pad** the ROI.
 
 In all, ffmpegcv is just similar to opencv api. But is has more codecs and does't require opencv installed.
@@ -25,6 +26,7 @@ In all, ffmpegcv is just similar to opencv api. But is has more codecs and does'
 - `VideoCaptureQSV`: Read a video file by Intel QuickSync Video.
 - `VideoCaptureCAM`: Read a camera.
 - `VideoCaptureStream`: Read a RTP/RTSP/RTMP/HTTP stream.
+- `VideoCaptureStreamRT`: Read a RTSP stream (IP Camera) in real time low latency as possible.
 - `noblock`: Read/Write a video file in background using mulitprocssing.
 
 ## Install
@@ -37,7 +39,7 @@ You need to download ffmpeg before you can use ffmpegcv.
  
  #2. python
  pip install ffmpegcv
- ```
+```
 
 ## When should choose `ffmpegcv` other than `opencv`:
 - The `opencv` is hard to install. The ffmpegcv only requires `numpy` and `FFmpeg`, works across Mac/Windows/Linux platforms.
@@ -67,7 +69,10 @@ cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
 
 ## Cross platform
 
-## GPU Accelation
+The ffmpegcv is based on Python+FFmpeg, it can cross platform among `Windows, Linux, Mac, X86, Arm`systems.
+
+## GPU Acceleration
+
 - Support **NVIDIA** card only, test in x86_64 only.
 - Works in **Windows**, **Linux** and **Anaconda**.
 - Works in the **Google Colab** notebook. 
@@ -304,7 +309,8 @@ Becareful when using it.
 - Support `RTSP`, `RTP`, `RTMP`, `HTTP`, `HTTPS` streams.
 - The `VideoCaptureStream` will be laggy and dropping frames if your post-process takes long time. The VideoCaptureCAM will buffer the recent frames.
 - The `VideoCaptureStream` is continously working on background even if you didn't read it. **Please release it in time**.
-- It's still experimental. Recommand you to use opencv.
+- **Low latency** RTSP IP camera reader. Batter than opencv.
+- *It's still experimental*. Recommand you to use opencv.
 
 
 ```python
@@ -328,6 +334,18 @@ import ffmpegcv
 cap = ffmpegcv.VideoCaptureStream(stream_url)
 while True:
     ret, frame = cap.read()
+    if not ret:
+        break
+    pass
+
+# ffmpegcv, IP Camera Low-latency
+# e.g. HIK Vision IP Camera, `101` Main camera stream, `102` the second
+stream_url = 'rtsp://admin:PASSWD@192.168.1.xxx:8554/Streaming/Channels/102'
+cap = ffmpegcv.VideoCaptureStreamRT(stream_url)  # Low latency & recent buffered
+cap = ffmpegcv.ReadLiveLast(ffmpegcv.VideoCaptureStreamRT, stream_url) #no buffer
+while True:
+    ret, frame = cap.read()
+    time.sleep(1/30)
     if not ret:
         break
     pass
