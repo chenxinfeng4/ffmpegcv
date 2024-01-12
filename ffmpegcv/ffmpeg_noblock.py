@@ -4,6 +4,7 @@ from typing import Callable
 import ffmpegcv
 import threading
 import numpy as np
+import queue
 
 
 def noblock(fun:Callable, *v_args, **v_kargs):
@@ -30,10 +31,12 @@ class ReadLiveLast(threading.Thread, ffmpegcv.FFmpegReader):
         self.img = np.zeros(self.out_numpy_shape, dtype=np.uint8)
         self.ret = True
         self._isopen = True
+        self._q = queue.Queue(maxsize=1) # synchronize new frame
         self.start()
 
     def read(self):
         if self.ret:
+            self._q.get()  # if reading too freq, then wait until new frame
             self.iframe += 1
         return self.ret, self.img
     
@@ -44,5 +47,7 @@ class ReadLiveLast(threading.Thread, ffmpegcv.FFmpegReader):
     def run(self):
         while self._isopen:
             self.ret, self.img = self.vid.read()
+            if not self._q.full():
+                self._q.put(None)
             if not self.ret:
                 break
