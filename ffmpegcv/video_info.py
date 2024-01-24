@@ -3,6 +3,7 @@ from subprocess import Popen, PIPE
 import re
 from collections import namedtuple
 import xml.etree.ElementTree as ET
+import shlex
 
 scan_the_whole = {'mkv', 'flv', 'ts'} #scan the whole file to the count, slow
 
@@ -18,7 +19,7 @@ def get_info(video:str):
     def ffprobe_info_(do_scan_the_whole):
         use_count_packets = '-count_packets' if do_scan_the_whole else ''
         cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams "{}"'.format(use_count_packets, video)
-        output = subprocess.check_output(cmd, shell=True)
+        output = subprocess.check_output(shlex.split(cmd), shell=False)
         root = ET.fromstring(output)
         assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
         vinfo = root[0][0].attrib
@@ -149,12 +150,14 @@ def run_async(args):
     quiet = True
     stderr_stream = subprocess.DEVNULL if quiet else None
     bufsize = -1
+    if isinstance(args, str):
+        args = shlex.split(args)
     return Popen(
         args,
         stdin=PIPE,
         stdout=PIPE,
         stderr=stderr_stream,
-        shell=isinstance(args, str),
+        shell=False,
         bufsize=bufsize,
     )
 

@@ -1,11 +1,12 @@
 import subprocess
 from collections import namedtuple
 import xml.etree.ElementTree as ET
+import shlex
 
 
 def get_info(stream_url):
     cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 -show_format -show_streams "{}"'.format(stream_url)
-    output = subprocess.check_output(cmd, shell=True)
+    output = subprocess.check_output(shlex.split(cmd), shell=False)
     root = ET.fromstring(output)
     assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
     vinfo = root[0][0].attrib
