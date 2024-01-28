@@ -40,6 +40,7 @@ class FFmpegReaderQSV(FFmpegReader):
         vid.origin_height = videoinfo.height
         vid.fps = videoinfo.fps
         vid.count = videoinfo.count
+        vid.duration = videoinfo.duration
         vid.codecQSV = decoder_to_qsv(videoinfo.codec)
         vid.pix_fmt = pix_fmt
 

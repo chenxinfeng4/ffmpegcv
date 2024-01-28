@@ -15,7 +15,7 @@ class FFmpegReaderNoblock(FFmpegReader):
         # work like normal FFmpegReaderObj
         props_name = ['width', 'height', 'fps', 'count', 'codec', 'ffmpeg_cmd',
                       'size', 'pix_fmt', 'out_numpy_shape', 'iframe', 
-                      'origin_width', 'origin_height']
+                      'duration', 'origin_width', 'origin_height']
         for name in props_name:
             setattr(self, name, getattr(vid, name, None))
         

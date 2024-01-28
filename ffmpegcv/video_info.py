@@ -48,6 +48,21 @@ def get_info(video:str):
     return videoinfo
 
 
+def get_info_precise(video:str):
+    videoinfo = get_info(video)
+    cmd = ('ffprobe -v error -select_streams v:0 -show_entries frame=pts_time '
+           f' -of default=noprint_wrappers=1:nokey=1 -read_intervals 0%+#1,99999% "{video}"')
+    output = subprocess.check_output(shlex.split(cmd), shell=False, stderr=subprocess.DEVNULL)
+    pts_start, *_, pts_end = output.decode().split()
+    pts_start, pts_end = float(pts_start), float(pts_end)
+    videoinfod = videoinfo._asdict()
+    duration_ = pts_end - pts_start
+    videoinfod['fps'] =  round((videoinfo.count - 1) / duration_, 3)
+    videoinfod['duration'] = round(duration_ + 1/videoinfod['fps'], 3)
+    videoinfo_precise = videoinfo.__class__(*videoinfod.values())
+    return videoinfo_precise
+
+
 def get_num_NVIDIA_GPUs():
     global _num_NVIDIA_GPUs, _inited_get_num_NVIDIA_GPUs
     if not _inited_get_num_NVIDIA_GPUs:

@@ -135,6 +135,7 @@ class FFmpegReader:
         vid.origin_height = videoinfo.height
         vid.fps = videoinfo.fps
         vid.count = videoinfo.count
+        vid.duration = videoinfo.duration
         vid.pix_fmt = pix_fmt
         vid.codec = codec if codec else videoinfo.codec
 
@@ -183,6 +184,7 @@ class FFmpegReaderNV(FFmpegReader):
         vid.origin_height = videoinfo.height
         vid.fps = videoinfo.fps
         vid.count = videoinfo.count
+        vid.duration = videoinfo.duration
         vid.width, vid.height = vid.origin_width, vid.origin_height
         vid.codec = videoinfo.codec
         assert vid.origin_height % 2 == 0, "height must be even"
