@@ -50,17 +50,18 @@ class FFmpegWriter:
 
     def _init_video_stream(self):
         bitrate_str = f'-b:v {self.bitrate} ' if self.bitrate else ''
+        target_pix_fmt = getattr(self, 'target_pix_fmt', 'yuv420p')
         self.ffmpeg_cmd = (f'ffmpeg -y -loglevel warning ' 
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
                 f'{bitrate_str} '
-                f'-r {self.fps} -c:v {self.codec} -pix_fmt yuv420p "{self.filename}"')
+                f'-r {self.fps} -c:v {self.codec} -pix_fmt {target_pix_fmt} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
 
     def write(self, img:np.ndarray):
         if self.waitInit:
             if self.pix_fmt in ('nv12', 'yuv420p', 'yuvj420p'):
-                assert width%2==0 and height_15*2%3==0
                 height_15, width = img.shape[:2]
+                assert width%2==0 and height_15*2%3==0
                 height = int(height_15 / 1.5)
             else:
                 height, width = img.shape[:2]

@@ -32,7 +32,7 @@ def get_info(video:str):
         vinfo = ffprobe_info_(do_scan_the_whole)
 
     VideoInfo = namedtuple(
-        "VideoInfo", ["width", "height", "fps", "count", "codec", "duration"]
+        "VideoInfo", ["width", "height", "fps", "count", "codec", "duration", "pix_fmt"]
     )
     outinfo = dict()
     outinfo['width'] = int(vinfo['width'])
@@ -41,6 +41,7 @@ def get_info(video:str):
     outinfo['count'] = int(vinfo['nb_read_packets' if do_scan_the_whole
                          else 'nb_frames']) #nb_read_packets | nb_frames
     outinfo['codec'] = vinfo['codec_name']
+    outinfo['pix_fmt'] = vinfo['pix_fmt']
     outinfo['duration'] = (float(vinfo['duration']) if 'duration' in vinfo
                             else outinfo['count']/outinfo['fps'])
     videoinfo = VideoInfo(**outinfo)

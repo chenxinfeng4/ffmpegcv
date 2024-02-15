@@ -319,7 +319,7 @@ class FFmpegReaderCAM:
         }[this_os]
 
         (vid.crop_width, vid.crop_height), (vid.width, vid.height), filteropt = get_videofilter_cpu(
-                (vid.origin_width, vid.origin_height), crop_xywh, resize, resize_keepratio, resize_keepratioalign)
+                (vid.origin_width, vid.origin_height), pix_fmt, crop_xywh, resize, resize_keepratio, resize_keepratioalign)
         vid.size = (vid.width, vid.height)
 
         opt_driver_ = {
