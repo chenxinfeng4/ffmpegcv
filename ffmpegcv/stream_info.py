@@ -5,7 +5,8 @@ import shlex
 
 
 def get_info(stream_url):
-    cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 -show_format -show_streams "{}"'.format(stream_url)
+    rtspflag = '-rtsp_transport tcp' if stream_url.startswith('rtsp://') else {}
+    cmd = 'ffprobe -v quiet -print_format xml {} -select_streams v:0 -show_format -show_streams "{}"'.format(rtspflag, stream_url)
     output = subprocess.check_output(shlex.split(cmd), shell=False)
     root = ET.fromstring(output)
     assert (root[0].tag, root[0][0].tag) == ("streams", "stream")

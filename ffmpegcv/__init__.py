@@ -6,6 +6,7 @@ from .ffmpeg_reader_stream_realtime import FFmpegReaderStreamRT
 from .ffmpeg_writer_stream_realtime import FFmpegWriterStreamRT
 from .ffmpeg_reader_qsv import FFmpegReaderQSV
 from .ffmpeg_writer_qsv import FFmpegWriterQSV
+from .ffmpeg_reader_pannels import FFmpegReaderPannels
 from .ffmpeg_noblock import noblock, ReadLiveLast
 from .video_info import get_num_NVIDIA_GPUs
 import shutil
@@ -462,3 +463,58 @@ def VideoCaptureStreamRT(
 
 
 VideoReaderStreamRT = VideoCaptureStreamRT
+
+
+def VideoCapturePannels(
+    file:str,
+    crop_xywh_l:list,
+    codec=None,
+    pix_fmt="bgr24",
+    resize=None
+):
+    """
+    Alternative to cv2.VideoCapture
+
+    Parameters
+    ----------
+    file : str
+        Path to video file.
+    crop_xywh_l : list of crop_xywh
+        Crop the frame. [(x0, y0, w0, h0), (x1, y1, w1, h1), ...].
+    codec : str
+        Codec to use. Optional. Default is `None`.
+    pix_fmt : str
+        Pixel format. ['bgr24' | 'rgb24' | 'gray']. Optional. Default is 'bgr24'.
+    resize  : tuple as (w,h)
+        Resize the pannels to identical size. Optional. Default is `None`.
+        Does not keep the ratio.
+
+
+    Examples
+    --------
+    
+
+    ffmpegcv
+    ```
+    w,h = 1280,800
+    cap = ffmpegcv.VideoCapturePannels(file,
+        [[0,0,w,h], [w,0,w,h],[0,h,w,h], [w,h,w,h]])
+    while True:
+        ret, frame_pannels = cap.read()
+        if not ret:
+            break
+        print(frame_pannels.shape)  # shape=(4,h,w,3)
+    ```
+
+    Author: Chenxinfeng 2024-02-15, cxf529125853@163.com
+    """
+
+    return FFmpegReaderPannels.VideoReader(
+        file, 
+        crop_xywh_l,
+        codec, 
+        pix_fmt,
+        resize,
+    )
+
+VideoReaderPannels = VideoCapturePannels
