@@ -6,7 +6,7 @@
 )
 ![Last Commit](https://shields.io/github/last-commit/chenxinfeng4/ffmpegcv)
 
-[English Version](./README.md) | 中文版本
+[English Version](./README.md) | 中文版本 | [Resume 开发者简历 陈昕枫](https://gitee.com/lilab/chenxinfeng-cv/blob/master/README.md)
 
 ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快和更强大。
 
