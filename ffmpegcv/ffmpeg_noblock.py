@@ -32,6 +32,7 @@ class ReadLiveLast(threading.Thread, ffmpegcv.FFmpegReader):
         self.ret = True
         self._isopen = True
         self._q = queue.Queue(maxsize=1) # synchronize new frame
+        self._lock = threading.Lock()
         self.start()
 
     def read(self):
@@ -42,11 +43,13 @@ class ReadLiveLast(threading.Thread, ffmpegcv.FFmpegReader):
     
     def release(self):
         self._isopen = False
-        self.vid.release()
+        with self._lock:
+            self.vid.release()
 
     def run(self):
         while self._isopen:
-            self.ret, self.img = self.vid.read()
+            with self._lock:
+                self.ret, self.img = self.vid.read()
             if not self._q.full():
                 self._q.put(None)
             if not self.ret:
