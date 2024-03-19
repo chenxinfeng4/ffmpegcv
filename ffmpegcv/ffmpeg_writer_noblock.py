@@ -29,13 +29,13 @@ class FFmpegWriterNoblock(FFmpegWriter):
         if self.waitInit:
             if self.size is None:
                 self.size = (img.shape[1], img.shape[0])
-                self.in_numpy_shape = img.shape
-                self._init_share_array()
-                process = Process(target=child_process, 
-                                args=(self.shared_array, self.q, self.in_numpy_shape,
-                                    self.vwriter_fun, self.vwriter_args, self.vwriter_kwargs))
-                process.start()
-                self.process = process
+            self.in_numpy_shape = img.shape
+            self._init_share_array()
+            process = Process(target=child_process, 
+                            args=(self.shared_array, self.q, self.in_numpy_shape,
+                                self.vwriter_fun, self.vwriter_args, self.vwriter_kwargs))
+            process.start()
+            self.process = process
             self.width, self.height = self.size
             self.waitInit = False
 
