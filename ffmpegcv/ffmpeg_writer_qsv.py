@@ -26,7 +26,7 @@ class FFmpegWriterQSV(FFmpegWriter):
             )
         else:
             codec = decoder_to_qsv(codec)
-        assert output_size is None or len(output_size) == 2
+        assert resize is None or len(resize) == 2
 
         vid = FFmpegWriterQSV()
         vid.fps, vid.size = fps, frameSize
@@ -36,7 +36,7 @@ class FFmpegWriterQSV(FFmpegWriter):
         vid.waitInit = True
         vid.bitrate = bitrate
         vid.bitrate = bitrate
-        vid.output_size = output_size
+        vid.resize = resize
         return vid
 
     def _init_video_stream(self):
@@ -45,6 +45,6 @@ class FFmpegWriterQSV(FFmpegWriter):
             f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
             f' {bitrate_str} '
             f'-r {self.fps} -c:v {self.codec} '
-            f'{"" if self.output_size is None or (self.output_size[0] == self.width and self.output_size[1] == self.height) else f"-vf scale={self.output_size[0]}:{self.output_size[1]}"} '
+            f'{"" if self.resize is None or (self.resize[0] == self.width and self.resize[1] == self.height) else f"-vf scale={self.resize[0]}:{self.resize[1]}"} '
             f'-pix_fmt yuv420p {"-f rtsp" if self.filename.startswith("rtsp://") else ""} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
