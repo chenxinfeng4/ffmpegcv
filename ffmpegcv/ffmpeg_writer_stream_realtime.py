@@ -23,6 +23,6 @@ class FFmpegWriterStreamRT(FFmpegWriter):
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -i pipe: '
                 f'{bitrate_str} -f flv '
                 f' -tune zerolatency -preset ultrafast '
-                f'{"" if self.output_size is None else f"-vf scale={self.output_size[0]}:{self.output_size[1]}"} '
+                f'{"" if self.output_size is None or (self.output_size[0] == self.width and self.output_size[1] == self.height) else f"-vf scale={self.output_size[0]}:{self.output_size[1]}"} '
                 f' -c:v {self.codec} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)

@@ -9,7 +9,7 @@ from .video_info import (
 
 class FFmpegWriterQSV(FFmpegWriter):
     @staticmethod
-    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, gpu, bitrate=None, output_size=None):
+    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, gpu, bitrate=None):
         assert gpu is None or gpu == 0, 'Cannot use multiple QSV gpu yet.'
         numGPU = get_num_QSV_GPUs()
         assert numGPU
@@ -45,6 +45,6 @@ class FFmpegWriterQSV(FFmpegWriter):
             f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
             f' {bitrate_str} '
             f'-r {self.fps} -c:v {self.codec} '
-            f'{"" if self.output_size is None else f"-vf scale={self.output_size[0]}:{self.output_size[1]}"} '
+            f'{"" if self.output_size is None or (self.output_size[0] == self.width and self.output_size[1] == self.height) else f"-vf scale={self.output_size[0]}:{self.output_size[1]}"} '
             f'-pix_fmt yuv420p {"-f rtsp" if self.filename.startswith("rtsp://") else ""} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)

@@ -57,7 +57,7 @@ class FFmpegWriter:
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
                 f'{bitrate_str} '
                 f'-r {self.fps} -c:v {self.codec} '
-                f'{"" if self.output_size is None else f"-vf scale={self.output_size[0]}:{self.output_size[1]}"} '
+                f'{"" if self.output_size is None or (self.output_size[0] == self.width and self.output_size[1] == self.height) else f"-vf scale={self.output_size[0]}:{self.output_size[1]}"} '
                 f'-pix_fmt {target_pix_fmt} {"-f rtsp" if self.filename.startswith("rtsp://") else ""} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
 
@@ -136,6 +136,6 @@ class FFmpegWriterNV(FFmpegWriter):
             f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
             f'-preset {self.preset} {bitrate_str} '
             f'-r {self.fps} -gpu {self.gpu} -c:v {self.codec} '
-            f'{"" if self.output_size is None else f"-vf scale={self.output_size[0]}:{self.output_size[1]}"} '
+            f'{"" if self.output_size is None or (self.output_size[0] == self.width and self.output_size[1] == self.height) else f"-vf scale={self.output_size[0]}:{self.output_size[1]}"} '
             f'-pix_fmt yuv420p {"-f rtsp" if self.filename.startswith("rtsp://") else ""} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
