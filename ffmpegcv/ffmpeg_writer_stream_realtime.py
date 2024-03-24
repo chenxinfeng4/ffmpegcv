@@ -19,10 +19,12 @@ class FFmpegWriterStreamRT(FFmpegWriter):
 
     def _init_video_stream(self):
         bitrate_str = f'-b:v {self.bitrate} ' if self.bitrate else ''
+        rtsp_str = f'-f rtsp' if self.filename.startswith('rtsp://') else ''
+        filter_str = '' if self.resize == self.size else f'-vf scale={self.resize[0]}:{self.resize[1]}'
         self.ffmpeg_cmd = (f'ffmpeg -loglevel warning ' 
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -i pipe: '
                 f'{bitrate_str} -f flv '
                 f' -tune zerolatency -preset ultrafast '
-                f'{"" if self.resize is None or (self.resize[0] == self.width and self.resize[1] == self.height) else f"-vf scale={self.resize[0]}:{self.resize[1]}"} '
+                f'{filter_str} {rtsp_str} '
                 f' -c:v {self.codec} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)

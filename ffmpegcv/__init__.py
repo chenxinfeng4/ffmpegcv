@@ -159,7 +159,7 @@ def VideoCapture(
 VideoReader = VideoCapture
 
 
-def VideoWriter(file, codec=None, fps=30, frameSize=None, pix_fmt="bgr24", bitrate=None, resize=None):
+def VideoWriter(file, codec=None, fps=30, pix_fmt="bgr24", bitrate=None, resize=None):
     """
     Alternative to cv2.VideoWriter
 
@@ -171,16 +171,12 @@ def VideoWriter(file, codec=None, fps=30, frameSize=None, pix_fmt="bgr24", bitra
         Codec to use. Optional. Default is `None` (x264).
     fps : number
         Frames per second. Optional. Default is 30.
-    frameSize : tuple
-        Frame size. (width, height). Optional. Default is `None`, which is
-        decided by the size of the first frame.
     pix_fmt : str
         Pixel format of input. ['bgr24' | 'rgb24']. Optional. Default is 'bgr24'.
     bitrate : str
         Bitrate of output video. Optional. Default is `None`.
     resize : tuple
-        Frame size of output. (width, height). Optional. Default is `None`, which is
-        decided by the size of the first frame.
+        Frame size of output. (width, height). Optional. Default is `None`.
 
     Examples
     --------
@@ -197,7 +193,7 @@ def VideoWriter(file, codec=None, fps=30, frameSize=None, pix_fmt="bgr24", bitra
 
     ffmpegcv
     ```
-    out = ffmpegcv.VideoWriter('outpy.avi', None, 10, (w, h))
+    out = ffmpegcv.VideoWriter('outpy.avi', None, 10)
     out.write(frame1)
     out.write(frame2)
     out.release()
@@ -222,7 +218,7 @@ def VideoWriter(file, codec=None, fps=30, frameSize=None, pix_fmt="bgr24", bitra
 
     Author: Chenxinfeng 2022-04-16, cxf529125853@163.com
     """
-    return FFmpegWriter.VideoWriter(file, codec, fps, frameSize, pix_fmt, bitrate, resize)
+    return FFmpegWriter.VideoWriter(file, codec, fps, pix_fmt, bitrate, resize)
 
 
 def VideoCaptureNV(
@@ -266,19 +262,19 @@ def VideoCaptureQSV(
 VideoReaderQSV = VideoCaptureQSV
 
 
-def VideoWriterNV(file, codec=None, fps=30, frameSize=None, pix_fmt="bgr24", gpu=0, bitrate=None, resize=None):
+def VideoWriterNV(file, codec=None, fps=30, pix_fmt="bgr24", gpu=0, bitrate=None, resize=None):
     """
     `ffmpegcv.VideoWriterNV` is a gpu version for `ffmpegcv.VideoWriter`.
     """
     _check_nvidia()
-    return FFmpegWriterNV.VideoWriter(file, codec, fps, frameSize, pix_fmt, gpu, bitrate, resize)
+    return FFmpegWriterNV.VideoWriter(file, codec, fps, pix_fmt, gpu, bitrate, resize)
 
 
-def VideoWriterQSV(file, codec=None, fps=30, frameSize=None, pix_fmt="bgr24", gpu=0, bitrate=None, resize=None):
+def VideoWriterQSV(file, codec=None, fps=30, pix_fmt="bgr24", gpu=0, bitrate=None, resize=None):
     """
     `ffmpegcv.VideoWriterQSV` is a gpu version for `ffmpegcv.VideoWriter`.
     """
-    return FFmpegWriterQSV.VideoWriter(file, codec, fps, frameSize, pix_fmt, gpu, bitrate, resize)
+    return FFmpegWriterQSV.VideoWriter(file, codec, fps, pix_fmt, gpu, bitrate, resize)
 
 
 def VideoWriterStreamRT(url, pix_fmt="bgr24", bitrate=None, resize=None):

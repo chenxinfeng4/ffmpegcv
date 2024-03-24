@@ -12,6 +12,7 @@ class FFmpegWriter:
     def __init__(self):
         self.iframe = -1
         self.size = None
+        self.width, self.height = None, None
         self.waitInit = True
         self._isopen = True
 
@@ -29,7 +30,7 @@ class FFmpegWriter:
         return f"{self.__class__}\n" + props
 
     @staticmethod
-    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, bitrate=None, resize=None):
+    def VideoWriter(filename, codec, fps, pix_fmt, bitrate=None, resize=None):
         if codec is None:
             codec = "h264"
         elif not isinstance(codec, str):
@@ -43,8 +44,7 @@ class FFmpegWriter:
         assert resize is None or len(resize) == 2
 
         vid = FFmpegWriter()
-        vid.fps, vid.size = fps, frameSize
-        vid.width, vid.height = vid.size if vid.size else (None, None)
+        vid.fps = fps
         vid.codec, vid.pix_fmt, vid.filename = codec, pix_fmt, filename
         vid.bitrate = bitrate
         vid.resize = resize
@@ -52,13 +52,15 @@ class FFmpegWriter:
 
     def _init_video_stream(self):
         bitrate_str = f'-b:v {self.bitrate} ' if self.bitrate else ''
+        rtsp_str = f'-f rtsp' if self.filename.startswith('rtsp://') else ''
+        filter_str = '' if self.resize == self.size else f'-vf scale={self.resize[0]}:{self.resize[1]}'
         target_pix_fmt = getattr(self, 'target_pix_fmt', 'yuv420p')
         self.ffmpeg_cmd = (f'ffmpeg -y -loglevel warning ' 
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
                 f'{bitrate_str} '
                 f'-r {self.fps} -c:v {self.codec} '
-                f'{"" if self.resize is None or (self.resize[0] == self.width and self.resize[1] == self.height) else f"-vf scale={self.resize[0]}:{self.resize[1]}"} '
-                f'-pix_fmt {target_pix_fmt} {"-f rtsp" if self.filename.startswith("rtsp://") else ""} "{self.filename}"')
+                f'{filter_str} {rtsp_str} '
+                f'-pix_fmt {target_pix_fmt} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
 
     def write(self, img:np.ndarray):
@@ -72,6 +74,7 @@ class FFmpegWriter:
             self.width, self.height = width, height
             self.in_numpy_shape = img.shape
             self.size = (width, height)
+            self.resize = self.size if self.resize is None else tuple(self.resize)
             self._init_video_stream()
             self.waitInit = False
 
@@ -94,7 +97,7 @@ class FFmpegWriter:
 
 class FFmpegWriterNV(FFmpegWriter):
     @staticmethod
-    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, gpu, bitrate=None, resize=None):
+    def VideoWriter(filename, codec, fps, pix_fmt, gpu, bitrate=None, resize=None):
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU
         gpu = int(gpu) % numGPU if gpu is not None else 0
@@ -119,8 +122,7 @@ class FFmpegWriterNV(FFmpegWriter):
         assert resize is None or len(resize) == 2
 
         vid = FFmpegWriterNV()
-        vid.fps, vid.size = fps, frameSize
-        vid.width, vid.height = vid.size if vid.size else (None, None)
+        vid.fps = fps
         vid.codec, vid.pix_fmt, vid.filename = codec, pix_fmt, filename
         vid.gpu = gpu
         vid.waitInit = True
@@ -130,12 +132,14 @@ class FFmpegWriterNV(FFmpegWriter):
 
     def _init_video_stream(self):
         bitrate_str = f'-b:v {self.bitrate} ' if self.bitrate else ''
+        rtsp_str = f'-f rtsp' if self.filename.startswith('rtsp://') else ''
+        filter_str = '' if self.resize == self.size else f'-vf scale={self.resize[0]}:{self.resize[1]}'
         default_preset = 'default' if IN_COLAB else 'p2'
         self.preset = getattr(self, 'preset', default_preset)
         self.ffmpeg_cmd = (f'ffmpeg -y -loglevel warning '
             f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
             f'-preset {self.preset} {bitrate_str} '
             f'-r {self.fps} -gpu {self.gpu} -c:v {self.codec} '
-            f'{"" if self.resize is None or (self.resize[0] == self.width and self.resize[1] == self.height) else f"-vf scale={self.resize[0]}:{self.resize[1]}"} '
-            f'-pix_fmt yuv420p {"-f rtsp" if self.filename.startswith("rtsp://") else ""} "{self.filename}"')
+            f'{filter_str} {rtsp_str} '
+            f'-pix_fmt yuv420p "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
