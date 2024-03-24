@@ -204,14 +204,18 @@ out_cpu = ffmpegcv.VideoWriter('outpy.mp4', None, 10)
 out_gpu0 = ffmpegcv.VideoWriterNV('outpy.mp4', 'h264', 10)        #NVIDIA GPU0
 out_gpu1 = ffmpegcv.VideoWriterNV('outpy.mp4', 'hevc', 10, gpu=1) #NVIDIA GPU1
 out_qsv  = ffmpegcv.VideoWriterQSV('outpy.mp4', 'h264', 10)        #Intel QSV, experimental
+
 ```
 
 Input image is rgb24 instead of bgr24
 ```python
 out = ffmpegcv.VideoWriter('outpy.mp4', None, 10, pix_fmt='rgb24')
-out.write(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 ```
 
+Resize the video
+```python
+out_resz = ffmpegcv.VideoWriter('outpy.mp4', None, 10, resize=(640, 480)) #Resize
+```
 ## Video Reader and Writer
 ---
 ```python

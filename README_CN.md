@@ -203,7 +203,11 @@ out_qsv  = ffmpegcv.VideoWriterQSV('outpy.mp4', 'h264', 10)        #Intel QSV, �
 输入图像使用rgb24而不是bgr24。
 ```python
 out = ffmpegcv.VideoWriter('outpy.mp4', None, 10, pix_fmt='rgb24')
-out.write(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+```
+
+缩放图像尺寸
+```python
+out_resz = ffmpegcv.VideoWriter('outpy.mp4', None, 10, resize=(640, 480)) 
 ```
 
 ## 视频读取器和写入器
