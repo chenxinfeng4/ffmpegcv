@@ -35,7 +35,6 @@ class FFmpegWriterQSV(FFmpegWriter):
         vid.gpu = gpu
         vid.waitInit = True
         vid.bitrate = bitrate
-        vid.bitrate = bitrate
         vid.resize = resize
         return vid
 
