@@ -29,7 +29,7 @@ class FFmpegWriter:
         return f"{self.__class__}\n" + props
 
     @staticmethod
-    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, bitrate=None):
+    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, bitrate=None, resize=None):
         if codec is None:
             codec = "h264"
         elif not isinstance(codec, str):
@@ -40,12 +40,14 @@ class FFmpegWriter:
                 You may used CV2.VideoWriter_fourcc, which will be ignored.
                 """
             )
+        assert resize is None or len(resize) == 2
 
         vid = FFmpegWriter()
         vid.fps, vid.size = fps, frameSize
         vid.width, vid.height = vid.size if vid.size else (None, None)
         vid.codec, vid.pix_fmt, vid.filename = codec, pix_fmt, filename
         vid.bitrate = bitrate
+        vid.resize = resize
         return vid
 
     def _init_video_stream(self):
@@ -54,7 +56,9 @@ class FFmpegWriter:
         self.ffmpeg_cmd = (f'ffmpeg -y -loglevel warning ' 
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
                 f'{bitrate_str} '
-                f'-r {self.fps} -c:v {self.codec} -pix_fmt {target_pix_fmt} "{self.filename}"')
+                f'-r {self.fps} -c:v {self.codec} '
+                f'{"" if self.resize is None or (self.resize[0] == self.width and self.resize[1] == self.height) else f"-vf scale={self.resize[0]}:{self.resize[1]}"} '
+                f'-pix_fmt {target_pix_fmt} {"-f rtsp" if self.filename.startswith("rtsp://") else ""} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
 
     def write(self, img:np.ndarray):
@@ -90,7 +94,7 @@ class FFmpegWriter:
 
 class FFmpegWriterNV(FFmpegWriter):
     @staticmethod
-    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, gpu, bitrate=None):
+    def VideoWriter(filename, codec, fps, frameSize, pix_fmt, gpu, bitrate=None, resize=None):
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU
         gpu = int(gpu) % numGPU if gpu is not None else 0
@@ -112,6 +116,7 @@ class FFmpegWriterNV(FFmpegWriter):
             "hevc_nvenc",
             "h264_nvenc",
         ], "codec should be `hevc_nvenc` or `h264_nvenc`"
+        assert resize is None or len(resize) == 2
 
         vid = FFmpegWriterNV()
         vid.fps, vid.size = fps, frameSize
@@ -120,6 +125,7 @@ class FFmpegWriterNV(FFmpegWriter):
         vid.gpu = gpu
         vid.waitInit = True
         vid.bitrate = bitrate
+        vid.resize = resize
         return vid
 
     def _init_video_stream(self):
@@ -129,5 +135,7 @@ class FFmpegWriterNV(FFmpegWriter):
         self.ffmpeg_cmd = (f'ffmpeg -y -loglevel warning '
             f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
             f'-preset {self.preset} {bitrate_str} '
-            f'-r {self.fps} -gpu {self.gpu} -c:v {self.codec} -pix_fmt yuv420p "{self.filename}"')
+            f'-r {self.fps} -gpu {self.gpu} -c:v {self.codec} '
+            f'{"" if self.resize is None or (self.resize[0] == self.width and self.resize[1] == self.height) else f"-vf scale={self.resize[0]}:{self.resize[1]}"} '
+            f'-pix_fmt yuv420p {"-f rtsp" if self.filename.startswith("rtsp://") else ""} "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
