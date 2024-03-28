@@ -44,7 +44,7 @@ class FFmpegReaderNoblock(FFmpegReader):
         
         self.q.get() # 等待子进程写入
         data_id = self.q.get() # 读取子进程写入的数据
-        if data_id is None:
+        if data_id is None and not isinstance(data_id, int):
             return False, None
         else:
             self.iframe += 1
