@@ -162,9 +162,8 @@ def decoder_to_qsv(codec):
         raise Exception("No QSV codec found for %s" % codec)
 
 
-def run_async(args):
-    quiet = True
-    stderr_stream = subprocess.DEVNULL if quiet else None
+def run_async(args, debug=True):
+    stderr_stream = None if debug else subprocess.DEVNULL
     bufsize = -1
     if isinstance(args, str):
         args = shlex.split(args)

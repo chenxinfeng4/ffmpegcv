@@ -125,7 +125,6 @@ class FFmpegWriterNV(FFmpegWriter):
         vid.fps = fps
         vid.codec, vid.pix_fmt, vid.filename = codec, pix_fmt, filename
         vid.gpu = gpu
-        vid.waitInit = True
         vid.bitrate = bitrate
         vid.resize = resize
         return vid
