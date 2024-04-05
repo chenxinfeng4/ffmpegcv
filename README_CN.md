@@ -8,7 +8,7 @@
 
 [English Version](./README.md) | 中文版本 | [Resume 开发者简历 陈昕枫](https://gitee.com/lilab/chenxinfeng-cv/blob/master/README.md)
 
-ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快和更强大。
+ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快和更强大。适合深度学习的视频处理。
 
 - ffmpegcv与open-cv具有**兼容**的API。
 - ffmpegcv可以使用**GPU加速**编码和解码。
@@ -17,6 +17,7 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
 - ffmpegcv支持网络**流视频读取** (网线监控相机)。
 - ffmpegcv支持ROI（感兴趣区域）操作，可以对ROI进行**裁剪**、**调整大小**和**填充**。
 总之，ffmpegcv与opencv的API非常相似。但它具有更多的编码器，并且不需要安装opencv。
+- ffmpegcv支持导出图像帧到CUDA设备。
 
 ## 功能：
 - `VideoWriter`：写入视频文件。
@@ -27,6 +28,7 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
 - `VideoCaptureStream`：读取RTP/RTSP/RTMP/HTTP流。
 - `VideoCaptureStreamRT`: 读取RTSP流 (网线监控相机)，实时、低延迟。
 - `noblock`：在后台读取视频文件（更快）,使用多进程。
+- `toCUDA`：将图像帧导出到CUDA设备，以 CHW/HWC-float32 格式存储，超过2倍性能提升。
 
 ## 安装
 在使用ffmpegcv之前，您需要下载`ffmpeg`。
@@ -37,7 +39,8 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
  #1D. CONDA: conda install ffmpeg=6.0.0
  
  #2. python
- pip install ffmpegcv
+ pip install ffmpegcv                                      #stable verison
+ pip install git+https://github.com/chenxinfeng4/ffmpegcv  #latest verison
  ```
 
 ## 何时选择 `ffmpegcv` 而不是 `opencv`：
@@ -65,6 +68,18 @@ with vidin, vidout:
 cap = ffmpegcv.VideoCaptureCAM(0)
 # 通过设备名称
 cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
+```
+
+深度学习流水线
+```python
+# video -> crop -> resize -> RGB -> CUDA:CHW float32 -> model
+cap = ffmpegcv.toCUDA(
+    ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12', resize=(W,H)),
+    tensor_format='CHW')
+
+for frame_CHW_cuda in cap:
+    frame_CHW_cuda = (frame_CHW_cuda - mean) / std
+    result = model(frame_CHW_cuda)
 ```
 
 ## GPU加速
@@ -166,6 +181,37 @@ cap = ffmpegcv.VideoCapture(file, resize=(640, 480), resize_keepratio=True)
 ```python
 cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480), resize=(512, 512))
 ```
+
+## toCUDA 将图像帧快速导出到CUDA设备
+---
+ffmpegcv 可以将 HWC-uint8 cpu 中的视频/流转换为 CUDA 设备中的 CHW-float32。它可以显著减少你的 CPU 负载，并比你的手动转换快 2 倍以上。
+
+准备环境。你需要具备 cuda 环境，并且安装 pycuda 包。注意，pytorch 包是非必须的。 
+> nvcc --version # 检查你是否已经安装了 NVIDIA CUDA 编译器
+> pip install pycuda # 安装 pycuda
+
+```python
+# 读取视频到CUDA设备，加速前
+cap = ffmpegcv.VideoCaptureNV(file, pix_fmt='rgb24')
+ret, frame_HWC_CPU = cap.read()
+frame_CHW_CUDA = torch.from_numpy(frame_HWC_CPU).permute(2, 0, 1).cuda().contiguous().float()    # 120fps, 1200% CPU 使用率
+
+# 加速后
+cap = toCUDA(ffmpegcv.VideoCapture(file, pix_fmt='yuv420p')) #必须设置, yuv420p 针对 cpu
+cap = toCUDA(ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12'))  #必须设置,  nv12 针对 gpu
+
+ret, frame_CHW_pycuda = cap.read()     #380fps, 200% CPU load, [pycuda array]
+ret, frame_CHW_pycudamem = cap.read_cudamem()  #same as [pycuda mem_alloc]
+ret, frame_CHW_CUDA = cap.read_torch()  #same as [pytorch tensor]
+
+frame_CHW_pycuda[:] = (frame_CHW_pycuda - mean) / std  #归一化
+```
+
+为什么在深度学习流水线中使用 toCUDA 会更快？
+
+> 1. ffmpeg 使用 CPU 将视频像素格式从原始 YUV 转换为 RGB24，这个过程很慢。`toCUDA` 使用 cuda 加速像素格式转换。
+> 2. 使用 yuv420p 或 nv12 可以节省 CPU 负载并减少从 CPU 到 GPU 的内存复制。
+> 3. ffmpeg 将图像存储为 HWC 格式。ffmpegcv 可以使用 HWC 和 CHW 格式来加速视频存储。
 
 ## 视频写入器
 ---

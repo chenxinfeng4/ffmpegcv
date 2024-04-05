@@ -517,3 +517,11 @@ def VideoCapturePannels(
     )
 
 VideoReaderPannels = VideoCapturePannels
+
+
+def toCUDA(vid:FFmpegReader, gpu:int=0, tensor_format:str='chw') -> FFmpegReader:
+    """
+    Convert frames to CUDA tensor float32 in 'chw' or 'hwc' format.
+    """
+    from ffmpegcv.ffmpeg_reader_cuda import FFmpegReaderCUDA
+    return FFmpegReaderCUDA(vid, gpu, tensor_format)

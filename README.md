@@ -8,16 +8,18 @@
 
 English Version | [中文版本](./README_CN.md) | [Resume 开发者简历 陈昕枫](https://gitee.com/lilab/chenxinfeng-cv/blob/master/README.md)
 
-The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2.
+The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2. Integrating ffmpegcv into your deeplearning pipeline is very smooth.
 
 - The ffmpegcv is api **compatible** to open-cv. 
 - The ffmpegcv can use **GPU accelerate** encoding and decoding*.
-- The ffmpegcv support much more video **codecs** v.s. open-cv.
-- The ffmpegcv support **RGB** & BGR & GRAY format as you like.
-- The ffmpegcv support **Stream reading** (IP Camera) in low latency.
-- The ffmpegcv can support ROI operations.You can **crop**, **resize** and **pad** the ROI.
+- The ffmpegcv supports much more video **codecs** v.s. open-cv.
+- The ffmpegcv supports **RGB** & BGR & GRAY format as you like.
+- The ffmpegcv supports fp32 CHW & HWC format short to cuda.
+- The ffmpegcv supports **Stream reading** (IP Camera) in low latency.
+- The ffmpegcv supports ROI operations.You can **crop**, **resize** and **pad** the ROI.
+- The ffmpegcv supports shortcut to CUDA memory copy.
 
-In all, ffmpegcv is just similar to opencv api. But is has more codecs and does't require opencv installed.
+In all, ffmpegcv is just similar to opencv api. But is has more codecs and does't require opencv installed. It's great for deeplearning pipeline.
 
 ## Functions:
 - `VideoWriter`: Write a video file.
@@ -28,6 +30,7 @@ In all, ffmpegcv is just similar to opencv api. But is has more codecs and does'
 - `VideoCaptureStream`: Read a RTP/RTSP/RTMP/HTTP stream.
 - `VideoCaptureStreamRT`: Read a RTSP stream (IP Camera) in real time low latency as possible.
 - `noblock`: Read/Write a video file in background using mulitprocssing.
+- `toCUDA`: Translate a video/stream as CHW/HWC-float32 format into CUDA device, >2x faster.
 
 ## Install
 You need to download ffmpeg before you can use ffmpegcv.
@@ -38,7 +41,8 @@ You need to download ffmpeg before you can use ffmpegcv.
  #1D. CONDA: conda install ffmpeg=6.0.0     #don't use the default 4.x.x version
  
  #2. python
- pip install ffmpegcv
+ pip install ffmpegcv                                      #stable verison
+ pip install git+https://github.com/chenxinfeng4/ffmpegcv  #latest verison
 ```
 
 ## When should choose `ffmpegcv` other than `opencv`:
@@ -46,7 +50,7 @@ You need to download ffmpeg before you can use ffmpegcv.
 - The `opencv` packages too much image processing toolbox. You just want a simple video/camero IO with GPU accessible.
 - The `opencv` didn't support `h264`/`h265` and other video writers.
 - You want to **crop**, **resize** and **pad** the video/camero ROI.
-
+- You are interested in deeplearning pipeline.
 ## Basic example
 Read a video by CPU, and rewrite it by GPU.
 ```python
@@ -67,6 +71,17 @@ cap = ffmpegcv.VideoCaptureCAM(0)
 cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
 ```
 
+Deeplearning pipeline.
+```python
+# video -> crop -> resize -> RGB -> CUDA:CHW float32 -> model
+cap = ffmpegcv.toCUDA(
+    ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12', resize=(W,H)),
+    tensor_format='CHW')
+
+for frame_CHW_cuda in cap:
+    frame_CHW_cuda = (frame_CHW_cuda - mean) / std
+    result = model(frame_CHW_cuda)
+```
 ## Cross platform
 
 The ffmpegcv is based on Python+FFmpeg, it can cross platform among `Windows, Linux, Mac, X86, Arm`systems.
@@ -171,6 +186,36 @@ cap = ffmpegcv.VideoCapture(file, resize=(640, 480), resize_keepratio=True)
 ```python
 cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480), resize=(512, 512))
 ```
+
+## toCUDA device
+---
+The ffmpegcv can translate the video/stream from HWC-uint8 cpu to CHW-float32 in CUDA device. It significantly reduce your cpu load, and get >2x faster than your manually convertion.
+
+Prepare your environment. The cuda environment is required. The `pycuda` package is required. The `pytorch` package is non-essential.
+> nvcc --version      # check you've installed NVIDIA CUDA Compiler
+> pip install pycuda  # install the pycuda, make sure
+
+```python
+# Read a video file to CUDA device, original
+cap = ffmpegcv.VideoCaptureNV(file, pix_fmt='rgb24')
+ret, frame_HWC_CPU = cap.read()
+frame_CHW_CUDA = torch.from_numpy(frame_HWC_CPU).permute(2, 0, 1).cuda().contiguous().float()    # 120fps, 1200% CPU load
+
+# speed up
+cap = toCUDA(ffmpegcv.VideoCapture(file, pix_fmt='yuv420p')) #must, yuv420p for cpu codec
+cap = toCUDA(ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12'))  #must, nv12 for gpu codec
+
+ret, frame_CHW_pycuda = cap.read()     #380fps, 200% CPU load, [pycuda array]
+ret, frame_CHW_pycudamem = cap.read_cudamem()  #same as [pycuda mem_alloc]
+ret, frame_CHW_CUDA = cap.read_torch()  #same as [pytorch tensor]
+
+frame_CHW_pycuda[:] = (frame_CHW_pycuda - mean) / std  #normalize
+```
+
+Why `toCUDA` is faster in your deeplearning pipeline?
+> 1. The ffmpeg uses the cpu to convert video pix_fmt from original YUV to RGB24, which is slow. The ffmpegcv use the cuda to accelerate pix_fmt convertion.
+> 2. Use `yuv420p` or `nv12` can save the cpu load and reduce the memory copy from CPU to GPU.
+> 2. The ffmpeg stores the image as HWC format. The ffmpegcv can use HWC & CHW format to accelerate the video reading.
 
 ## Video Writer
 ---
