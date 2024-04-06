@@ -199,10 +199,13 @@ frame_CHW_CUDA = torch.from_numpy(frame_HWC_CPU).permute(2, 0, 1).cuda().contigu
 # 加速后
 cap = toCUDA(ffmpegcv.VideoCapture(file, pix_fmt='yuv420p')) #必须设置, yuv420p 针对 cpu
 cap = toCUDA(ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12'))  #必须设置,  nv12 针对 gpu
+cap = toCUDA(vid, tensor_format='chw') #tensor 格式:'chw'(默认) or 'hwc'
+cap = toCUDA(vid, gpu=1)  #选择 gpu
 
 ret, frame_CHW_pycuda = cap.read()     #380fps, 200% CPU load, [pycuda array]
 ret, frame_CHW_pycudamem = cap.read_cudamem()  #same as [pycuda mem_alloc]
 ret, frame_CHW_CUDA = cap.read_torch()  #same as [pytorch tensor]
+ret, _ = cap.read_torch(frame_CHW_CUDA)  #不拷贝, 但需要提前分配内存
 
 frame_CHW_pycuda[:] = (frame_CHW_pycuda - mean) / std  #归一化
 ```

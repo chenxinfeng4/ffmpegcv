@@ -204,10 +204,14 @@ frame_CHW_CUDA = torch.from_numpy(frame_HWC_CPU).permute(2, 0, 1).cuda().contigu
 # speed up
 cap = toCUDA(ffmpegcv.VideoCapture(file, pix_fmt='yuv420p')) #must, yuv420p for cpu codec
 cap = toCUDA(ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12'))  #must, nv12 for gpu codec
+cap = toCUDA(vid, tensor_format='chw') #tensor format:'chw'(defalut) or 'hwc'
+cap = toCUDA(vid, gpu=1) #choose gpu
 
+# read to the cuda device
 ret, frame_CHW_pycuda = cap.read()     #380fps, 200% CPU load, [pycuda array]
 ret, frame_CHW_pycudamem = cap.read_cudamem()  #same as [pycuda mem_alloc]
 ret, frame_CHW_CUDA = cap.read_torch()  #same as [pytorch tensor]
+ret, _ = cap.read_torch(frame_CHW_CUDA)  #no copy, but need to specify the output memory
 
 frame_CHW_pycuda[:] = (frame_CHW_pycuda - mean) / std  #normalize
 ```

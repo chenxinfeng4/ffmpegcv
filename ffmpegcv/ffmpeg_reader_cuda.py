@@ -1,13 +1,15 @@
-import pycuda.autoinit
 import pycuda.driver as cuda
 from pycuda.driver import PointerHolderBase
 from pycuda.compiler import SourceModule
 from pycuda import gpuarray
 from ffmpegcv.ffmpeg_reader import FFmpegReader, FFmpegReaderNV
 import numpy as np
+from typing import Tuple
 
 
-mod = SourceModule("""
+cuda.init()
+
+mod_code = ("""
 __global__ void yuv420p_CHW_fp32(unsigned char *YUV420p, float *RGB24, int *width_, int *height_)
 {
     int width = *width_; int height = *height_;
@@ -144,10 +146,13 @@ __global__ void NV12_HWC_fp32(unsigned char *NV12, float *RGB24, int *width_, in
 )
 
 
-converter = {('yuv420p', 'chw'): mod.get_function('yuv420p_CHW_fp32'),
-             ('yuv420p', 'hwc'): mod.get_function('yuv420p_HWC_fp32'),
-             ('nv12', 'chw'): mod.get_function('NV12_CHW_fp32'),
-             ('nv12', 'hwc'): mod.get_function('NV12_HWC_fp32')}
+def load_cuda_module():
+    mod = SourceModule(mod_code)
+    converter = {('yuv420p', 'chw'): mod.get_function('yuv420p_CHW_fp32'),
+                ('yuv420p', 'hwc'): mod.get_function('yuv420p_HWC_fp32'),
+                ('nv12', 'chw'): mod.get_function('NV12_CHW_fp32'),
+                ('nv12', 'hwc'): mod.get_function('NV12_HWC_fp32')}
+    return converter
 
 
 class Holder(PointerHolderBase):
@@ -180,9 +185,26 @@ def tensor_to_gpuarray(tensor):
     return gpuarray.GPUArray(tensor.shape, dtype=np.float32, gpudata=Holder(tensor))
 
 
+class PycudaContext:
+    def __init__(self, gpu=0):
+        self.ctx = cuda.Device(gpu).make_context()
+
+    def __enter__(self):
+        if self.ctx is not None:
+            self.ctx.push()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        if self.ctx is not None:
+            self.ctx.pop()
+
+    def __del__(self):
+        if self.ctx is not None:
+            self.ctx.pop()
+
+
 class FFmpegReaderCUDA(FFmpegReader):
     def __init__(self, vid:FFmpegReader, gpu=0, tensor_format='hwc'):
-        assert gpu==0, 'Only support gpu=0 for now.'
         assert vid.pix_fmt in ['yuv420p', 'nv12'], 'Set pix_fmt to yuv420p or nv12. Auto convert to rgb in cuda.'
         assert tensor_format in ['hwc', 'chw'], 'tensor_format must be hwc or chw'
         if isinstance(vid, FFmpegReaderNV) and vid.pix_fmt != 'nv12':
@@ -196,57 +218,63 @@ class FFmpegReaderCUDA(FFmpegReader):
                       'duration', 'origin_width', 'origin_height']
         for name in props_name:
             setattr(self, name, getattr(vid, name, None))
+        self.ctx = PycudaContext(gpu)
         self.pix_fmt = 'rgb24'
         self.vid = vid
         self.out_numpy_shape = (vid.height, vid.width, 3) if tensor_format == 'hwc' else (3, vid.height, vid.width)
         self.torch_device = f'cuda:{gpu}'
-        self.converter = converter[(vid.pix_fmt, tensor_format)]
         self.block_size = (16, 16, 1)
         self.grid_size = ((self.width + self.block_size[0] - 1) // self.block_size[0],
                           (self.height + self.block_size[1] - 1) // self.block_size[1])
         self.process = None
+        with self.ctx:
+            self.converter = load_cuda_module()[(vid.pix_fmt, tensor_format)]
 
-    def read(self, out_MAT=None):
+    def read(self, out_MAT:gpuarray.GPUArray=None) -> Tuple[bool, gpuarray.GPUArray]:
         self.waitInit = True
         ret, frame_yuv420p = self.vid.read()
         if not ret:
             return False, None
         
-        if out_MAT is None:
-            out_MAT = gpuarray.empty(self.out_numpy_shape, dtype=np.float32)
-        self.converter(cuda.In(frame_yuv420p), out_MAT, 
-                       cuda.In(np.int32(self.width)), cuda.In(np.int32(self.height)),
-                       block=self.block_size, grid=self.grid_size)
-        return True, out_MAT
+        with self.ctx:
+            if out_MAT is None:
+                out_MAT = gpuarray.empty(self.out_numpy_shape, dtype=np.float32)
+            self.converter(cuda.In(frame_yuv420p), out_MAT, 
+                        cuda.In(np.int32(self.width)), cuda.In(np.int32(self.height)),
+                        block=self.block_size, grid=self.grid_size)
+            return True, out_MAT
     
-    def read_cudamem(self, out_MAT=None):
+    def read_cudamem(self, out_MAT:cuda.DeviceAllocation=None) -> Tuple[bool, cuda.DeviceAllocation]:
         self.waitInit = True
         ret, frame_yuv420p = self.vid.read()
         if not ret:
             return False, None
-        
-        if out_MAT is None:
-            out_MAT = cuda.mem_alloc(int(np.prod(self.out_numpy_shape) * 
-                                         np.dtype(np.float32).itemsize))
-        self.converter(cuda.In(frame_yuv420p), out_MAT, 
-                       cuda.In(np.int32(self.width)), cuda.In(np.int32(self.height)),
-                       block=self.block_size, grid=self.grid_size)
-        return True, out_MAT
+            
+        with self.ctx:
+            if out_MAT is None:
+                out_MAT = cuda.mem_alloc(int(np.prod(self.out_numpy_shape) * 
+                                            np.dtype(np.float32).itemsize))
+            self.converter(cuda.In(frame_yuv420p), out_MAT, 
+                        cuda.In(np.int32(self.width)), cuda.In(np.int32(self.height)),
+                        block=self.block_size, grid=self.grid_size)
+            return True, out_MAT
     
-    def read_torch(self):
+    def read_torch(self, out_MAT=None):
         import torch
         self.waitInit = True
         ret, frame_yuv420p = self.vid.read()
         if not ret:
             return False, None
         
-        tensor = torch.empty(self.out_numpy_shape, dtype=torch.float32, device=self.torch_device)
-        tensor_proxy = tensor_to_gpuarray(tensor)
-        self.converter(cuda.In(frame_yuv420p), tensor_proxy.gpudata, 
-                       cuda.In(np.int32(self.width)), cuda.In(np.int32(self.height)),
-                       block=self.block_size, grid=self.grid_size)
-        return True, tensor
+        with self.ctx:
+            if out_MAT is None:
+                out_MAT = torch.empty(self.out_numpy_shape, dtype=torch.float32, device=self.torch_device)
+            tensor_proxy = tensor_to_gpuarray(out_MAT)
+            self.converter(cuda.In(frame_yuv420p), tensor_proxy.gpudata, 
+                        cuda.In(np.int32(self.width)), cuda.In(np.int32(self.height)),
+                        block=self.block_size, grid=self.grid_size)
+            return True, out_MAT
 
     def release(self):
         self.vid.release()
-        return super().release()
+        super().release()
