@@ -67,6 +67,67 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
     return crop_wh, final_size_wh, filteropt
 
 
+def get_videofilter_gpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:list,
+               resize_keepratio:bool, resize_keepratioalign:str):
+    origin_width, origin_height = originsize
+    if crop_xywh:
+        crop_w, crop_h = crop_xywh[2:]
+        x, y, w, h = crop_xywh
+        top, bottom, left, right = (
+                y,
+                origin_height - (y + h),
+                x,
+                origin_width - (x + w),
+            )  # crop length
+        cropopt = f"-crop {top}x{bottom}x{left}x{right}"
+    else:
+        crop_w, crop_h = origin_width, origin_height
+        cropopt = ""
+
+    crop_wh = (crop_w, crop_h)
+    if resize is None or tuple(resize) == crop_wh:
+        scaleopt = ""
+        padopt = ""
+        final_size_wh = crop_wh
+    else:
+        final_size_wh = dst_width, dst_height = resize
+        if not resize_keepratio:
+            scaleopt = f"-resize {dst_width}x{dst_height}"
+            filteropt = ""
+        else:
+            re_width, re_height = crop_w / (crop_h / dst_height), dst_height
+            if re_width > dst_width:
+                re_width, re_height = dst_width, crop_h / (crop_w / dst_width)
+            re_width, re_height = int(re_width), int(re_height)
+            scaleopt = f"-resize {re_width}x{re_height}"
+            if resize_keepratioalign is None:
+                resize_keepratioalign = "center"
+            paddings = {
+                "center": (
+                    (dst_width - re_width) // 2,
+                    (dst_height - re_height) // 2,
+                ),
+                "topleft": (0, 0),
+                "topright": (dst_width - re_width, 0),
+                "bottomleft": (0, dst_height - re_height),
+                "bottomright": (dst_width - re_width, dst_height - re_height),
+            }
+            assert (
+                resize_keepratioalign in paddings
+            ), 'resize_keepratioalign must be one of "center"(mmpose), "topleft"(mmdetection), "topright", "bottomleft", "bottomright"'
+            xpading, ypading = paddings[resize_keepratioalign]
+            padopt = f"pad={dst_width}:{dst_height}:{xpading}:{ypading}:black"
+            filteropt = f"-vf {padopt}"
+
+    if pix_fmt=='gray':
+        if filteropt:
+            filteropt=f'{filteropt},extractplanes=y'
+        else:
+            filteropt=f'-vf extractplanes=y'
+
+    return crop_wh, final_size_wh, [cropopt, scaleopt, filteropt]
+    
+
 def get_outnumpyshape(size_wh:list, pix_fmt:str) -> tuple:
     width, height = size_wh
     assert (not pix_fmt == "yuv420p") or (
@@ -86,6 +147,9 @@ def get_outnumpyshape(size_wh:list, pix_fmt:str) -> tuple:
 class FFmpegReader:
     def __init__(self):
         self.iframe = -1
+        self.width = None
+        self.height = None
+        self.size = (None, None)
         self.waitInit = True
         self.process = None
         self._isopen = True
@@ -262,7 +326,7 @@ class FFmpegReaderNV(FFmpegReader):
         assert os.path.exists(filename) and os.path.isfile(
             filename
         ), f"{filename} not exists"
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12", "gray"]
+        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "yuvj420p", "nv12", "gray"]
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU > 0, "No GPU found"
         gpu = int(gpu) % numGPU if gpu is not None else 0

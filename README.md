@@ -14,12 +14,11 @@ The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which ar
 - The ffmpegcv can use **GPU accelerate** encoding and decoding*.
 - The ffmpegcv supports much more video **codecs** v.s. open-cv.
 - The ffmpegcv supports **RGB** & BGR & GRAY format as you like.
-- The ffmpegcv supports fp32 CHW & HWC format short to cuda.
+- The ffmpegcv supports fp32 CHW & HWC format shortcut to CUDA memory.
 - The ffmpegcv supports **Stream reading** (IP Camera) in low latency.
 - The ffmpegcv supports ROI operations.You can **crop**, **resize** and **pad** the ROI.
-- The ffmpegcv supports shortcut to CUDA memory copy.
 
-In all, ffmpegcv is just similar to opencv api. But is has more codecs and does't require opencv installed. It's great for deeplearning pipeline.
+In all, ffmpegcv is just similar to opencv api. But it has more codecs and does't require opencv installed at all. It's great for deeplearning pipeline.
 
 ## Functions:
 - `VideoWriter`: Write a video file.
@@ -43,6 +42,9 @@ You need to download ffmpeg before you can use ffmpegcv.
  #2. python
  pip install ffmpegcv                                      #stable verison
  pip install git+https://github.com/chenxinfeng4/ffmpegcv  #latest verison
+
+ #3. recommand when using cuda
+ pip install ffmpegcv[cuda]
 ```
 
 ## When should choose `ffmpegcv` other than `opencv`:
@@ -193,7 +195,8 @@ The ffmpegcv can translate the video/stream from HWC-uint8 cpu to CHW-float32 in
 
 Prepare your environment. The cuda environment is required. The `pycuda` package is required. The `pytorch` package is non-essential.
 > nvcc --version      # check you've installed NVIDIA CUDA Compiler
-> pip install pycuda  # install the pycuda, make sure
+>
+> pip install ffmpegcv[cuda]  # install the pycuda
 
 ```python
 # Read a video file to CUDA device, original

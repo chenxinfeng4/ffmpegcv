@@ -26,8 +26,12 @@ class ReadLiveLast(threading.Thread, ffmpegcv.FFmpegReader):
         threading.Thread.__init__(self)
         ffmpegcv.FFmpegReader.__init__(self)
         self.vid = vid = fun(*args, **kvargs)
-        self.out_numpy_shape = vid.out_numpy_shape
-        self.width, self.height = vid.width, vid.height
+        props_name = ['width', 'height', 'fps', 'count', 'codec', 'ffmpeg_cmd',
+                      'size', 'pix_fmt', 'out_numpy_shape', 'iframe', 
+                      'duration', 'origin_width', 'origin_height']
+        for name in props_name:
+            setattr(self, name, getattr(vid, name, None))
+
         self.img = np.zeros(self.out_numpy_shape, dtype=np.uint8)
         self.ret = True
         self._isopen = True

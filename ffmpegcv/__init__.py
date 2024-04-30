@@ -2,7 +2,7 @@ from .ffmpeg_reader import FFmpegReader, FFmpegReaderNV
 from .ffmpeg_writer import FFmpegWriter, FFmpegWriterNV
 from .ffmpeg_reader_camera import FFmpegReaderCAM
 from .ffmpeg_reader_stream import FFmpegReaderStream
-from .ffmpeg_reader_stream_realtime import FFmpegReaderStreamRT
+from .ffmpeg_reader_stream_realtime import FFmpegReaderStreamRT, FFmpegReaderStreamRTNV
 from .ffmpeg_writer_stream_realtime import FFmpegWriterStreamRT
 from .ffmpeg_reader_qsv import FFmpegReaderQSV
 from .ffmpeg_writer_qsv import FFmpegWriterQSV
@@ -67,7 +67,7 @@ def VideoCapture(
     resize=None,
     resize_keepratio=True,
     resize_keepratioalign="center",
-):
+) -> FFmpegReader:
     """
     Alternative to cv2.VideoCapture
 
@@ -229,7 +229,7 @@ def VideoCaptureNV(
     resize_keepratio=True,
     resize_keepratioalign="center",
     gpu=0,
-):
+) -> FFmpegReaderNV:
     """
     `ffmpegcv.VideoCaptureNV` is a gpu version for `ffmpegcv.VideoCapture`.
     """
@@ -250,7 +250,7 @@ def VideoCaptureQSV(
     resize_keepratio=True,
     resize_keepratioalign="center",
     gpu=0,
-):
+) -> FFmpegReaderQSV:
     """
     `ffmpegcv.VideoCaptureQSV` is a gpu version for `ffmpegcv.VideoCapture`.
     """
@@ -292,7 +292,7 @@ def VideoCaptureCAM(
     camfps=None,
     camcodec=None,
     campix_fmt=None,
-):
+) -> FFmpegReaderCAM:
     """
     Alternative to cv2.VideoCapture
 
@@ -383,7 +383,7 @@ def VideoCaptureStream(
     resize=None,
     resize_keepratio=True,
     resize_keepratioalign="center"
-):
+) -> FFmpegReaderStream:
     """
     Alternative to cv2.VideoCapture
 
@@ -449,16 +449,28 @@ def VideoCaptureStreamRT(
     resize=None,
     resize_keepratio=True,
     resize_keepratioalign="center",
-):
-    return FFmpegReaderStreamRT.VideoReader(
-        stream_url, 
-        codec, 
-        pix_fmt,
-        crop_xywh,
-        resize,
-        resize_keepratio,
-        resize_keepratioalign
-    )
+    gpu=None
+) -> FFmpegReaderStreamRT:
+    if gpu is None:
+        return FFmpegReaderStreamRT.VideoReader(
+            stream_url, 
+            codec, 
+            pix_fmt,
+            crop_xywh,
+            resize,
+            resize_keepratio,
+            resize_keepratioalign
+        )
+    else:
+        return FFmpegReaderStreamRT.VideoReader(
+            stream_url, 
+            codec, 
+            pix_fmt,
+            crop_xywh,
+            resize,
+            resize_keepratio,
+            resize_keepratioalign
+        )
 
 
 VideoReaderStreamRT = VideoCaptureStreamRT

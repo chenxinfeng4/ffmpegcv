@@ -18,5 +18,8 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'numpy',
-    ]
+    ],
+    extras_require={
+        'cuda': ['pycuda']  # 定义一个名为cuda的可选依赖项，并指定pycuda
+    }
 )

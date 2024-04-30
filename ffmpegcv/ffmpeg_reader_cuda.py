@@ -10,6 +10,18 @@ from typing import Tuple
 cuda.init()
 
 mod_code = ("""
+__device__ void yuv_to_rgb(unsigned char &y, unsigned char &u, unsigned char &v, 
+                            float &r, float &g, float &b)
+{
+    // https://fourcc.org/fccyvrgb.php
+    float Y_val = (float)1.164 * ((float)y - 16.0);
+    float U_val = (float)u - 128.0;
+    float V_val = (float)v - 128.0;
+    r = Y_val + 1.596 * V_val;
+    g = Y_val - 0.813 * V_val - 0.391 * U_val;
+    b = Y_val + 2.018 * U_val;
+}
+
 __global__ void yuv420p_CHW_fp32(unsigned char *YUV420p, float *RGB24, int *width_, int *height_)
 {
     int width = *width_; int height = *height_;
@@ -28,19 +40,10 @@ __global__ void yuv420p_CHW_fp32(unsigned char *YUV420p, float *RGB24, int *widt
     unsigned char *Y = YUV420p;
     unsigned char *U = YUV420p + w_h;
     unsigned char *V = U + w_h/4;
-    unsigned char Y_val = Y[out_ind];
-    float U_val = U[(y / 2) * (width / 2) + x / 2] - 128.0;
-    float V_val = V[(y / 2) * (width / 2) + x / 2] - 128.0;
+    int delta = (y/2)*(width/2)+x/2;
 
-    // Convert the YUV values to RGB values
-    float R_val = Y_val + 1.403 * V_val;
-    float G_val = Y_val - 0.344 * U_val - 0.714 * V_val;
-    float B_val = Y_val + 1.770 * U_val;
-
-    // Clamp the RGB values to the range [0, 255]
-    RGB24[out_ind]         = R_val;
-    RGB24[out_ind + w_h]   = G_val;
-    RGB24[out_ind + w_h*2] = B_val;
+    yuv_to_rgb(Y[out_ind], U[delta], V[delta],
+            RGB24[out_ind], RGB24[out_ind + w_h], RGB24[out_ind + w_h*2]);
 }
 
 __global__ void yuv420p_HWC_fp32(unsigned char *YUV420p, float *RGB24, int *width_, int *height_)
@@ -61,20 +64,11 @@ __global__ void yuv420p_HWC_fp32(unsigned char *YUV420p, float *RGB24, int *widt
     unsigned char *Y = YUV420p;
     unsigned char *U = YUV420p + w_h;
     unsigned char *V = U + w_h/4;
-    unsigned char Y_val = Y[out_ind];
-    float U_val = U[(y / 2) * (width / 2) + x / 2] - 128.0;
-    float V_val = V[(y / 2) * (width / 2) + x / 2] - 128.0;
-
-    // Convert the YUV values to RGB values
-    float R_val = Y_val + 1.403 * V_val;
-    float G_val = Y_val - 0.344 * U_val - 0.714 * V_val;
-    float B_val = Y_val + 1.770 * U_val;
-
-    // Clamp the RGB values to the range [0, 255]
+    int delta = (y/2)*(width/2)+x/2;
     auto ind = (yW + x)*3;
-    RGB24[ind + 0] = R_val;
-    RGB24[ind + 1] = G_val;
-    RGB24[ind + 2] = B_val;
+
+    yuv_to_rgb(Y[out_ind], U[delta], V[delta],
+            RGB24[ind], RGB24[ind+1], RGB24[ind+2]);
 }
 
 __global__ void NV12_CHW_fp32(unsigned char *NV12, float *RGB24, int *width_, int *height_)
@@ -94,19 +88,8 @@ __global__ void NV12_CHW_fp32(unsigned char *NV12, float *RGB24, int *width_, in
     auto out_ind = yW + x;
     unsigned char *Y = NV12 + out_ind;
     unsigned char *UV = NV12 + w_h + (y / 2) * width + (x / 2) * 2;
-    unsigned char Y_val = *Y;
-    float U_val = UV[0] - 128.0;
-    float V_val = UV[1] - 128.0;
-
-    // Convert the YUV values to RGB values
-    float R_val = Y_val + 1.403 * V_val;
-    float G_val = Y_val - 0.344 * U_val - 0.714 * V_val;
-    float B_val = Y_val + 1.770 * U_val;
-
-    // Clamp the RGB values to the range [0, 255]
-    RGB24[out_ind]         = R_val;
-    RGB24[out_ind + w_h]   = G_val;
-    RGB24[out_ind + w_h*2] = B_val;
+    yuv_to_rgb(Y[0], UV[0], UV[1],
+            RGB24[out_ind], RGB24[out_ind + w_h], RGB24[out_ind + w_h*2]);
 }
 
 __global__ void NV12_HWC_fp32(unsigned char *NV12, float *RGB24, int *width_, int *height_)
@@ -126,22 +109,10 @@ __global__ void NV12_HWC_fp32(unsigned char *NV12, float *RGB24, int *width_, in
     auto out_ind = yW + x;
     unsigned char *Y = NV12 + out_ind;
     unsigned char *UV = NV12 + w_h + (y / 2) * width + (x / 2) * 2;
-    unsigned char Y_val = *Y;
-    float U_val = UV[0] - 128.0;
-    float V_val = UV[1] - 128.0;
-
-    // Convert the YUV values to RGB values
-    float R_val = Y_val + 1.403 * V_val;
-    float G_val = Y_val - 0.344 * U_val - 0.714 * V_val;
-    float B_val = Y_val + 1.770 * U_val;
-
-    // Clamp the RGB values to the range [0, 255]
     auto ind = (yW + x)*3;
-    RGB24[ind + 0] = R_val;
-    RGB24[ind + 1] = G_val;
-    RGB24[ind + 2] = B_val;
+    yuv_to_rgb(Y[0], UV[0], UV[1],
+            RGB24[ind], RGB24[ind+1], RGB24[ind+2]);
 }
-
 """
 )
 

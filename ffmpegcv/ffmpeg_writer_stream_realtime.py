@@ -7,7 +7,7 @@ class FFmpegWriterStreamRT(FFmpegWriter):
     def VideoWriter(filename:str, codec, pix_fmt, bitrate=None, resize=None) -> FFmpegWriter:
         assert codec in ['h264', 'libx264', 'x264']
         assert pix_fmt in ['bgr24', 'rgb24']
-        assert filename.startswith('rtmp://'), 'currently only support rtmp'
+        # assert filename.startswith('rtmp://'), 'currently only support rtmp'
         assert resize is None or len(resize) == 2
         vid = FFmpegWriterStreamRT()
         vid.filename = filename
