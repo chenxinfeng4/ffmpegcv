@@ -462,14 +462,15 @@ def VideoCaptureStreamRT(
             resize_keepratioalign
         )
     else:
-        return FFmpegReaderStreamRT.VideoReader(
+        return FFmpegReaderStreamRTNV.VideoReader(
             stream_url, 
             codec, 
             pix_fmt,
             crop_xywh,
             resize,
             resize_keepratio,
-            resize_keepratioalign
+            resize_keepratioalign,
+            gpu=gpu
         )
 
 

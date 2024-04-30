@@ -85,15 +85,14 @@ def get_videofilter_gpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
         cropopt = ""
 
     crop_wh = (crop_w, crop_h)
+    filteropt = ""
+    scaleopt = ""
     if resize is None or tuple(resize) == crop_wh:
-        scaleopt = ""
-        padopt = ""
         final_size_wh = crop_wh
     else:
         final_size_wh = dst_width, dst_height = resize
         if not resize_keepratio:
             scaleopt = f"-resize {dst_width}x{dst_height}"
-            filteropt = ""
         else:
             re_width, re_height = crop_w / (crop_h / dst_height), dst_height
             if re_width > dst_width:

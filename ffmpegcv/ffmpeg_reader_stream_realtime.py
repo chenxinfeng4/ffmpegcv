@@ -90,8 +90,9 @@ class FFmpegReaderStreamRTNV(FFmpegReader):
         vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning -hwaccel cuda -hwaccel_device {gpu} "
             f' {rtsp_opt} '
+            f'{cropopt} {scaleopt} '
             '-fflags nobuffer -flags low_delay -strict experimental '
-            f' -vcodec {vid.codecNV} {cropopt} {scaleopt} -i "{stream_url}" '
+            f' -vcodec {vid.codecNV} -i "{stream_url}" '
             f" {filteropt} -pix_fmt {pix_fmt} -f rawvideo pipe:"
         )
 
