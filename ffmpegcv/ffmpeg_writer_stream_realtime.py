@@ -4,7 +4,7 @@ from ffmpegcv.ffmpeg_writer import FFmpegWriter
 
 class FFmpegWriterStreamRT(FFmpegWriter):
     @staticmethod
-    def VideoWriter(filename:str, codec, pix_fmt, bitrate=None, resize=None) -> FFmpegWriter:
+    def VideoWriter(filename:str, codec, pix_fmt, bitrate=None, resize=None, preset=None) -> FFmpegWriter:
         assert codec in ['h264', 'libx264', 'x264']
         assert pix_fmt in ['bgr24', 'rgb24', 'gray']
         # assert filename.startswith('rtmp://'), 'currently only support rtmp'
@@ -15,6 +15,7 @@ class FFmpegWriterStreamRT(FFmpegWriter):
         vid.pix_fmt = pix_fmt
         vid.bitrate = bitrate
         vid.resize = resize
+        vid.preset = preset
         return vid
 
     def _init_video_stream(self):
