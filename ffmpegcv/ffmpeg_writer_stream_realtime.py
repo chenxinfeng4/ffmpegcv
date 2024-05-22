@@ -15,7 +15,9 @@ class FFmpegWriterStreamRT(FFmpegWriter):
         vid.pix_fmt = pix_fmt
         vid.bitrate = bitrate
         vid.resize = resize
-        vid.preset = preset
+        if preset is not None:
+            print('Preset is auto configured in FFmpegWriterStreamRT')
+        vid.preset = 'ultrafast'
         return vid
 
     def _init_video_stream(self):
@@ -25,7 +27,7 @@ class FFmpegWriterStreamRT(FFmpegWriter):
         self.ffmpeg_cmd = (f'ffmpeg -loglevel warning ' 
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -i pipe: '
                 f'{bitrate_str} -f flv '
-                f' -tune zerolatency -preset ultrafast '
+                f' -tune zerolatency -preset {self.preset} '
                 f'{filter_str} {rtsp_str} '
                 f' -c:v {self.codec} -pix_fmt yuv420p "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)

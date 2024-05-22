@@ -177,7 +177,8 @@ def VideoWriter(file, codec=None, fps=30, pix_fmt="bgr24", bitrate=None, resize=
         Bitrate of output video. Optional. Default is `None`.
     resize : tuple
         Frame size of output. (width, height). Optional. Default is `None`.
-
+    preset : str
+        Preset of ffmpeg. Optional. Default is `None`.
     Examples
     --------
     opencv
