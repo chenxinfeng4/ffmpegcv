@@ -1,0 +1,4 @@
+/build
+*.pyc
+/dist
+/ffmpegcv.egg-info

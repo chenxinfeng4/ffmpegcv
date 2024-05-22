@@ -9,7 +9,7 @@ from .video_info import (
 
 class FFmpegWriterQSV(FFmpegWriter):
     @staticmethod
-    def VideoWriter(filename, codec, fps, pix_fmt, gpu, bitrate=None, resize=None):
+    def VideoWriter(filename, codec, fps, pix_fmt, gpu, bitrate=None, resize=None, preset=None):
         assert gpu is None or gpu == 0, 'Cannot use multiple QSV gpu yet.'
         numGPU = get_num_QSV_GPUs()
         assert numGPU
@@ -34,4 +34,5 @@ class FFmpegWriterQSV(FFmpegWriter):
         vid.gpu = gpu
         vid.bitrate = bitrate
         vid.resize = resize
+        vid.preset = preset
         return vid
