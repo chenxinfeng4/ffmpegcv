@@ -196,7 +196,7 @@ The ffmpegcv can translate the video/stream from HWC-uint8 cpu to CHW-float32 in
 Prepare your environment. The cuda environment is required. The `pycuda` package is required. The `pytorch` package is non-essential.
 > nvcc --version      # check you've installed NVIDIA CUDA Compiler
 >
-> pip install ffmpegcv[cuda]  # install the pycuda
+> pip install ffmpegcv[cuda]  #or pip install the pycuda
 
 ```python
 # Read a video file to CUDA device, original
@@ -205,24 +205,24 @@ ret, frame_HWC_CPU = cap.read()
 frame_CHW_CUDA = torch.from_numpy(frame_HWC_CPU).permute(2, 0, 1).cuda().contiguous().float()    # 120fps, 1200% CPU load
 
 # speed up
-cap = toCUDA(ffmpegcv.VideoCapture(file, pix_fmt='yuv420p')) #must, yuv420p for cpu codec
-cap = toCUDA(ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12'))  #must, nv12 for gpu codec
-cap = toCUDA(vid, tensor_format='chw') #tensor format:'chw'(defalut) or 'hwc'
+cap = toCUDA(ffmpegcv.VideoCapture(file, pix_fmt='yuv420p')) #pix_fmt: 'yuv420p' or 'nv12' only
+cap = toCUDA(ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12'))  #'nv12' is better for gpu
+cap = toCUDA(vid, tensor_format='chw') #tensor format:'chw'(default) or 'hwc', fp32 precision
 cap = toCUDA(vid, gpu=1) #choose gpu
 
 # read to the cuda device
-ret, frame_CHW_pycuda = cap.read()     #380fps, 200% CPU load, [pycuda array]
-ret, frame_CHW_pycudamem = cap.read_cudamem()  #same as [pycuda mem_alloc]
-ret, frame_CHW_CUDA = cap.read_torch()  #same as [pytorch tensor]
+ret, frame_CHW_pycuda = cap.read()     #380fps, 200% CPU load, dtype is [pycuda array]
+ret, frame_CHW_pycudamem = cap.read_cudamem()  #dtype is  [pycuda mem_alloc]
+ret, frame_CHW_CUDA = cap.read_torch()  #dtype is  [pytorch tensor]
 ret, _ = cap.read_torch(frame_CHW_CUDA)  #no copy, but need to specify the output memory
 
 frame_CHW_pycuda[:] = (frame_CHW_pycuda - mean) / std  #normalize
 ```
 
-Why `toCUDA` is faster in your deeplearning pipeline?
-> 1. The ffmpeg uses the cpu to convert video pix_fmt from original YUV to RGB24, which is slow. The ffmpegcv use the cuda to accelerate pix_fmt convertion.
+How can `toCUDA` make it faster in your deeplearning pipeline than `opencv` or `ffmpeg`?
+> 1. The opencv/ffmpeg uses the cpu to convert video pix_fmt from original YUV to RGB24, which is slow. The ffmpegcv use the cuda to accelerate pix_fmt convertion.
 > 2. Use `yuv420p` or `nv12` can save the cpu load and reduce the memory copy from CPU to GPU.
-> 2. The ffmpeg stores the image as HWC format. The ffmpegcv can use HWC & CHW format to accelerate the video reading.
+> 3. The ffmpeg stores the image as HWC format. The ffmpegcv can use HWC & CHW format to accelerate the video reading.
 
 ## Video Writer
 ---
