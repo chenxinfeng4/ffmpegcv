@@ -75,10 +75,15 @@ cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
 
 Deeplearning pipeline.
 ```python
-# video -> crop -> resize -> RGB -> CUDA:CHW float32 -> model
+"""
+          ——————————  NVIDIA GPU accelerating ⤴⤴ ———————
+          |                                              |
+          V                                              V
+video -> decode -> crop -> resize -> RGB -> CUDA:CHW float32 -> model
+"""
 cap = ffmpegcv.toCUDA(
     ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12', resize=(W,H)),
-    tensor_format='CHW')
+    tensor_format='chw')
 
 for frame_CHW_cuda in cap:
     frame_CHW_cuda = (frame_CHW_cuda - mean) / std

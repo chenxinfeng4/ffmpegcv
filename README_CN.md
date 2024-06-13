@@ -72,10 +72,15 @@ cap = ffmpegcv.VideoCaptureCAM("Integrated Camera")
 
 深度学习流水线
 ```python
-# video -> crop -> resize -> RGB -> CUDA:CHW float32 -> model
+"""
+          ——————————    NVIDIA GPU 加速 ⤴⤴   ———————
+          |                                         |
+          V                                         V
+视频 -> 解码器 -> 裁剪 -> 缩放 -> RGB -> CUDA:CHW float32 -> 模型
+"""
 cap = ffmpegcv.toCUDA(
     ffmpegcv.VideoCaptureNV(file, pix_fmt='nv12', resize=(W,H)),
-    tensor_format='CHW')
+    tensor_format='chw')
 
 for frame_CHW_cuda in cap:
     frame_CHW_cuda = (frame_CHW_cuda - mean) / std
