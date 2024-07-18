@@ -199,9 +199,10 @@ cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480), resize=(512, 512))
 The ffmpegcv can translate the video/stream from HWC-uint8 cpu to CHW-float32 in CUDA device. It significantly reduce your cpu load, and get >2x faster than your manually convertion.
 
 Prepare your environment. The cuda environment is required. The `pycuda` package is required. The `pytorch` package is non-essential.
-> nvcc --version      # check you've installed NVIDIA CUDA Compiler
+> nvcc --version      # check you've installed NVIDIA CUDA Compiler. Already installed if
+>                     you've installed Tensorflow-gpu or Pytorch-gpu
 >
-> pip install ffmpegcv[cuda]  #or pip install the pycuda
+> pip install ffmpegcv[cuda]  #auto install pycuda
 
 ```python
 # Read a video file to CUDA device, original

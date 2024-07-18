@@ -21,7 +21,7 @@ class FFmpegReaderStream(FFmpegReaderCAM):
         resize_keepratio,
         resize_keepratioalign,
     ):
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12", "gray"]
+        
         vid = FFmpegReaderStream()
         videoinfo = get_info(stream_url)
         vid.origin_width = videoinfo.width
@@ -73,7 +73,6 @@ class FFmpegReaderStreamNV(FFmpegReaderCAM):
         resize_keepratioalign,
         gpu
     ):
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12", "gray"]
         numGPU = get_num_NVIDIA_GPUs()
         vid = FFmpegReaderStreamNV()
         videoinfo = get_info(stream_url)

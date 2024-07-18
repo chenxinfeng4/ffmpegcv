@@ -15,6 +15,7 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
     """
     ONGONING: common filter for video/cam/stream capture.
     """
+    assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "yuvj420p", "nv12", "gray"]
     origin_width, origin_height = originsize
     if crop_xywh:
         crop_w, crop_h = crop_xywh[2:]
@@ -69,6 +70,7 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
 
 def get_videofilter_gpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:list,
                resize_keepratio:bool, resize_keepratioalign:str):
+    assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "yuvj420p", "nv12", "gray"]
     origin_width, origin_height = originsize
     if crop_xywh:
         crop_w, crop_h = crop_xywh[2:]
@@ -191,7 +193,6 @@ class FFmpegReader:
         assert os.path.exists(filename) and os.path.isfile(
             filename
         ), f"{filename} not exists"
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "yuvj420p", "nv12", "gray"]
 
         vid = FFmpegReader()
         videoinfo = get_info(filename)
@@ -347,14 +348,5 @@ class FFmpegReaderNV(FFmpegReader):
         )
 
         vid.pix_fmt = pix_fmt
-        assert (not pix_fmt == "yuv420p") or (
-            vid.height % 2 == 0 and vid.width % 2 == 0
-        ), "yuv420p must be even"
-        vid.out_numpy_shape = {
-            "rgb24": (vid.height, vid.width, 3),
-            "bgr24": (vid.height, vid.width, 3),
-            "yuv420p": (int(vid.height * 1.5), vid.width),
-            "nv12": (int(vid.height * 1.5), vid.width),
-            "gray": (vid.height, vid.width, 1)
-        }[pix_fmt]
+        vid.out_numpy_shape = get_outnumpyshape(vid.size, pix_fmt)
         return vid

@@ -255,8 +255,6 @@ class FFmpegReaderCAM:
         campix_fmt=None,
         step=1,
     ):
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12"]
-
         vid = FFmpegReaderCAM()
         if this_os == platform.mac:
             # use cam_id as the device marker
@@ -328,7 +326,7 @@ class FFmpegReaderCAM:
             platform.win: "dshow",
         }[this_os]
 
-        args = (
+        vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning "
             f" -f {opt_driver_} "
             f" -video_size {vid.origin_width}x{vid.origin_height} "
@@ -338,7 +336,7 @@ class FFmpegReaderCAM:
         )
 
         vid.out_numpy_shape = get_outnumpyshape(vid.size, pix_fmt)
-        vid.process = run_async(args)
+        vid.process = run_async(vid.ffmpeg_cmd)
 
         # producer
         assert step >= 1 and isinstance(step, int)

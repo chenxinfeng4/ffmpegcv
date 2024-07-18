@@ -25,7 +25,6 @@ class FFmpegReaderQSV(FFmpegReader):
         assert os.path.exists(filename) and os.path.isfile(
             filename
         ), f"{filename} not exists"
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12", "gray"]
         assert gpu is None or gpu == 0, 'Cannot use multiple QSV gpu yet.'
         numGPU = get_num_QSV_GPUs()
         assert numGPU > 0, "No GPU found"

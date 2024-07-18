@@ -21,7 +21,6 @@ class FFmpegReaderStreamRT(FFmpegReader):
         resize_keepratio,
         resize_keepratioalign
     ):
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "yuvj420p", "nv12", "gray"]
         vid = FFmpegReaderStreamRT()
         videoinfo = get_info(stream_url)
         vid.origin_width = videoinfo.width
@@ -65,7 +64,6 @@ class FFmpegReaderStreamRTNV(FFmpegReader):
         resize_keepratioalign,
         gpu,
     ):
-        assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "yuvj420p", "nv12", "gray"]
         vid = FFmpegReaderStreamRTNV()
         videoinfo = get_info(stream_url)
         vid.origin_width = videoinfo.width

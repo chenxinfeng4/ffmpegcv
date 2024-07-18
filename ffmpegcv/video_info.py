@@ -20,6 +20,7 @@ def get_info(video:str):
     def ffprobe_info_(do_scan_the_whole):
         use_count_packets = '-count_packets' if do_scan_the_whole else ''
         cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams "{}"'.format(use_count_packets, video)
+        #cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams stream=pix_fmt "{}"'.format(use_count_packets, video)
         output = subprocess.check_output(shlex.split(cmd), shell=False)
         root = ET.fromstring(output)
         assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
@@ -32,8 +33,11 @@ def get_info(video:str):
         do_scan_the_whole = True
         vinfo = ffprobe_info_(do_scan_the_whole)
 
+    # VideoInfo = namedtuple(
+    #     "VideoInfo", ["width", "height", "fps", "count", "codec", "duration", "pix_fmt"]
+    # )
     VideoInfo = namedtuple(
-        "VideoInfo", ["width", "height", "fps", "count", "codec", "duration", "pix_fmt"]
+        "VideoInfo", ["width", "height", "fps", "count", "codec", "duration"]
     )
     outinfo = dict()
     outinfo['width'] = int(vinfo['width'])
@@ -42,7 +46,8 @@ def get_info(video:str):
     outinfo['count'] = int(vinfo['nb_read_packets' if do_scan_the_whole
                          else 'nb_frames']) #nb_read_packets | nb_frames
     outinfo['codec'] = vinfo['codec_name']
-    outinfo['pix_fmt'] = vinfo['pix_fmt']
+    #outinfo['pix_fmt'] = vinfo['pix_fmt']
+
     outinfo['duration'] = (float(vinfo['duration']) if 'duration' in vinfo
                             else outinfo['count']/outinfo['fps'])
     videoinfo = VideoInfo(**outinfo)
