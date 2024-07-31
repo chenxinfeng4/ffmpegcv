@@ -1,9 +1,6 @@
-from .video_info import run_async
-from queue import Queue
 from ffmpegcv.ffmpeg_reader import (
     FFmpegReader, get_videofilter_cpu, get_outnumpyshape, 
     get_videofilter_gpu, get_num_NVIDIA_GPUs, decoder_to_nvidia)
-import numpy as np
 from ffmpegcv.stream_info import get_info
 
 
@@ -19,10 +16,11 @@ class FFmpegReaderStreamRT(FFmpegReader):
         crop_xywh,
         resize,
         resize_keepratio,
-        resize_keepratioalign
+        resize_keepratioalign,
+        timeout
     ):
         vid = FFmpegReaderStreamRT()
-        videoinfo = get_info(stream_url)
+        videoinfo = get_info(stream_url,timeout)
         vid.origin_width = videoinfo.width
         vid.origin_height = videoinfo.height
         vid.fps = videoinfo.fps
@@ -63,9 +61,10 @@ class FFmpegReaderStreamRTNV(FFmpegReader):
         resize_keepratio,
         resize_keepratioalign,
         gpu,
+        timeout
     ):
         vid = FFmpegReaderStreamRTNV()
-        videoinfo = get_info(stream_url)
+        videoinfo = get_info(stream_url,timeout)
         vid.origin_width = videoinfo.width
         vid.origin_height = videoinfo.height
         vid.fps = videoinfo.fps

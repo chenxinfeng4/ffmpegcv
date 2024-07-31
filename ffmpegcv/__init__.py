@@ -383,7 +383,8 @@ def VideoCaptureStream(
     crop_xywh=None,
     resize=None,
     resize_keepratio=True,
-    resize_keepratioalign="center"
+    resize_keepratioalign="center",
+    timeout=None
 ) -> FFmpegReaderStream:
     """
     Alternative to cv2.VideoCapture
@@ -397,6 +398,7 @@ def VideoCaptureStream(
     resize  : see ffmpegcv.VideoReader
     resize_keepratio : see ffmpegcv.VideoReader
     resize_keepratioalign : see ffmpegcv.VideoReader
+    timeout : waits in seconds for stream video to connect
 
     Examples
     --------
@@ -435,7 +437,8 @@ def VideoCaptureStream(
         crop_xywh,
         resize,
         resize_keepratio,
-        resize_keepratioalign
+        resize_keepratioalign,
+        timeout
     )
 
 
@@ -450,7 +453,8 @@ def VideoCaptureStreamRT(
     resize=None,
     resize_keepratio=True,
     resize_keepratioalign="center",
-    gpu=None
+    gpu=None,
+    timeout=None
 ) -> FFmpegReaderStreamRT:
     if gpu is None:
         return FFmpegReaderStreamRT.VideoReader(
@@ -460,7 +464,8 @@ def VideoCaptureStreamRT(
             crop_xywh,
             resize,
             resize_keepratio,
-            resize_keepratioalign
+            resize_keepratioalign,
+            timeout=timeout
         )
     else:
         return FFmpegReaderStreamRTNV.VideoReader(
@@ -471,7 +476,8 @@ def VideoCaptureStreamRT(
             resize,
             resize_keepratio,
             resize_keepratioalign,
-            gpu=gpu
+            gpu=gpu,
+            timeout=timeout
         )
 
 
