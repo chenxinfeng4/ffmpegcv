@@ -20,10 +20,11 @@ class FFmpegReaderStream(FFmpegReaderCAM):
         resize,
         resize_keepratio,
         resize_keepratioalign,
+        timeout
     ):
         
         vid = FFmpegReaderStream()
-        videoinfo = get_info(stream_url)
+        videoinfo = get_info(stream_url,timeout)
         vid.origin_width = videoinfo.width
         vid.origin_height = videoinfo.height
         vid.fps = videoinfo.fps
@@ -71,11 +72,12 @@ class FFmpegReaderStreamNV(FFmpegReaderCAM):
         resize,
         resize_keepratio,
         resize_keepratioalign,
-        gpu
+        gpu,
+        timeout
     ):
         numGPU = get_num_NVIDIA_GPUs()
         vid = FFmpegReaderStreamNV()
-        videoinfo = get_info(stream_url)
+        videoinfo = get_info(stream_url,timeout)
         vid.origin_width = videoinfo.width
         vid.origin_height = videoinfo.height
         vid.fps = videoinfo.fps

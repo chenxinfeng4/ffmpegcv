@@ -4,10 +4,10 @@ import xml.etree.ElementTree as ET
 import shlex
 
 
-def get_info(stream_url):
+def get_info(stream_url, timeout=None):
     rtspflag = '-rtsp_transport tcp' if stream_url.startswith('rtsp://') else ''
     cmd = 'ffprobe -v quiet -print_format xml {} -select_streams v:0 -show_format -show_streams "{}"'.format(rtspflag, stream_url)
-    output = subprocess.check_output(shlex.split(cmd), shell=False)
+    output = subprocess.check_output(shlex.split(cmd), shell=False, timeout=timeout)
     root = ET.fromstring(output)
     assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
     vinfo = root[0][0].attrib
