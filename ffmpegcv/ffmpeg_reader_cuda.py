@@ -18,8 +18,11 @@ __device__ void yuv_to_rgb(unsigned char &y, unsigned char &u, unsigned char &v,
     float U_val = (float)u - 128.0;
     float V_val = (float)v - 128.0;
     r = Y_val + 1.596 * V_val;
+    r = max(0.0, min(255.0, r)); // clamp(r, 0.0, 255.0);
     g = Y_val - 0.813 * V_val - 0.391 * U_val;
+    g = max(0.0, min(255.0, g));
     b = Y_val + 2.018 * U_val;
+    b = max(0.0, min(255.0, b));
 }
 
 __global__ void yuv420p_CHW_fp32(unsigned char *YUV420p, float *RGB24, int *width_, int *height_)
