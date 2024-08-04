@@ -205,7 +205,7 @@ class FFmpegReaderCUDA(FFmpegReader):
             self.converter = load_cuda_module()[(vid.pix_fmt, tensor_format)]
 
     def read(self, out_MAT:gpuarray.GPUArray=None) -> Tuple[bool, gpuarray.GPUArray]:
-        self.waitInit = True
+        self.waitInit = False
         ret, frame_yuv420p = self.vid.read()
         if not ret:
             return False, None
@@ -219,7 +219,7 @@ class FFmpegReaderCUDA(FFmpegReader):
             return True, out_MAT
     
     def read_cudamem(self, out_MAT:cuda.DeviceAllocation=None) -> Tuple[bool, cuda.DeviceAllocation]:
-        self.waitInit = True
+        self.waitInit = False
         ret, frame_yuv420p = self.vid.read()
         if not ret:
             return False, None
@@ -235,7 +235,7 @@ class FFmpegReaderCUDA(FFmpegReader):
     
     def read_torch(self, out_MAT=None):
         import torch
-        self.waitInit = True
+        self.waitInit = False
         ret, frame_yuv420p = self.vid.read()
         if not ret:
             return False, None
