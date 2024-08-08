@@ -20,6 +20,11 @@ The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which ar
 
 In all, ffmpegcv is just similar to opencv api. But it has more codecs and does't require opencv installed at all. It's great for deeplearning pipeline.
 
+
+<p align="center">
+<img src="https://i.imghippo.com/files/cg9641723107581.jpg"  width="95%">
+</p>
+
 ## Functions:
 - `VideoWriter`: Write a video file.
 - `VideoCapture`: Read a video file.

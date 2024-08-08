@@ -19,6 +19,10 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
 总之，ffmpegcv与opencv的API非常相似。但它具有更多的编码器，并且不需要安装opencv。
 - ffmpegcv支持导出图像帧到CUDA设备。
 
+<p align="center">
+<img src="https://i.imghippo.com/files/cg9641723107581.jpg"  width="95%">
+</p>
+
 ## 功能：
 - `VideoWriter`：写入视频文件。
 - `VideoCapture`：读取视频文件。
