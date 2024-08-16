@@ -19,6 +19,8 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
     origin_width, origin_height = originsize
     if crop_xywh:
         crop_w, crop_h = crop_xywh[2:]
+        assert all([n %2 == 0] for n in crop_xywh), "'crop_xywh' must be even number"
+        assert crop_w <= origin_width and crop_h <= origin_height
         x, y, w, h = crop_xywh
         cropopt = f"crop={w}:{h}:{x}:{y}"
     else:
@@ -31,7 +33,8 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
         padopt = ""
         final_size_wh = crop_wh
     else:
-        final_size_wh = dst_width, dst_height = resize
+        final_size_wh = (dst_width, dst_height) = resize
+        assert all([n %2 == 0] for n in resize), "'resize' must be even number"
         if not resize_keepratio:
             scaleopt = f"scale={dst_width}x{dst_height}"
             padopt = ""
@@ -74,6 +77,8 @@ def get_videofilter_gpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
     origin_width, origin_height = originsize
     if crop_xywh:
         crop_w, crop_h = crop_xywh[2:]
+        assert all([n %2 == 0] for n in crop_xywh), "'crop_xywh' must be even number"
+        assert crop_w <= origin_width and crop_h <= origin_height
         x, y, w, h = crop_xywh
         top, bottom, left, right = (
                 y,
@@ -92,7 +97,8 @@ def get_videofilter_gpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
     if resize is None or tuple(resize) == crop_wh:
         final_size_wh = crop_wh
     else:
-        final_size_wh = dst_width, dst_height = resize
+        final_size_wh = (dst_width, dst_height) = resize
+        assert all([n %2 == 0] for n in resize), "'resize' must be even number"
         if not resize_keepratio:
             scaleopt = f"-resize {dst_width}x{dst_height}"
         else:

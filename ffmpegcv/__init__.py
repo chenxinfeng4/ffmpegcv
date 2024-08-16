@@ -12,7 +12,8 @@ from .video_info import get_num_NVIDIA_GPUs
 import shutil
 from subprocess import DEVNULL, check_output
 
-from .version import __version__ 
+from .version import __version__
+
 
 def _check():
     if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
@@ -26,6 +27,7 @@ def _check():
 _check()
 
 _check_nvidia_init = None
+
 
 def _check_nvidia():
     global _check_nvidia_init
@@ -159,7 +161,9 @@ def VideoCapture(
 VideoReader = VideoCapture
 
 
-def VideoWriter(file, codec=None, fps=30, pix_fmt="bgr24", bitrate=None, resize=None, preset=None):
+def VideoWriter(
+    file, codec=None, fps=30, pix_fmt="bgr24", bitrate=None, resize=None, preset=None
+) -> FFmpegWriter:
     """
     Alternative to cv2.VideoWriter
 
@@ -219,7 +223,9 @@ def VideoWriter(file, codec=None, fps=30, pix_fmt="bgr24", bitrate=None, resize=
 
     Author: Chenxinfeng 2022-04-16, cxf529125853@163.com
     """
-    return FFmpegWriter.VideoWriter(file, codec, fps, pix_fmt, bitrate, resize, preset=preset)
+    return FFmpegWriter.VideoWriter(
+        file, codec, fps, pix_fmt, bitrate, resize, preset=preset
+    )
 
 
 def VideoCaptureNV(
@@ -263,23 +269,49 @@ def VideoCaptureQSV(
 VideoReaderQSV = VideoCaptureQSV
 
 
-def VideoWriterNV(file, codec=None, fps=30, pix_fmt="bgr24", gpu=0, bitrate=None, resize=None, preset=None):
+def VideoWriterNV(
+    file,
+    codec=None,
+    fps=30,
+    pix_fmt="bgr24",
+    gpu=0,
+    bitrate=None,
+    resize=None,
+    preset=None,
+) -> FFmpegWriterNV:
     """
     `ffmpegcv.VideoWriterNV` is a gpu version for `ffmpegcv.VideoWriter`.
     """
     _check_nvidia()
-    return FFmpegWriterNV.VideoWriter(file, codec, fps, pix_fmt, gpu, bitrate, resize, preset=preset)
+    return FFmpegWriterNV.VideoWriter(
+        file, codec, fps, pix_fmt, gpu, bitrate, resize, preset=preset
+    )
 
 
-def VideoWriterQSV(file, codec=None, fps=30, pix_fmt="bgr24", gpu=0, bitrate=None, resize=None, preset=None):
+def VideoWriterQSV(
+    file,
+    codec=None,
+    fps=30,
+    pix_fmt="bgr24",
+    gpu=0,
+    bitrate=None,
+    resize=None,
+    preset=None,
+) -> FFmpegWriterQSV:
     """
     `ffmpegcv.VideoWriterQSV` is a gpu version for `ffmpegcv.VideoWriter`.
     """
-    return FFmpegWriterQSV.VideoWriter(file, codec, fps, pix_fmt, gpu, bitrate, resize, preset=preset)
+    return FFmpegWriterQSV.VideoWriter(
+        file, codec, fps, pix_fmt, gpu, bitrate, resize, preset=preset
+    )
 
 
-def VideoWriterStreamRT(url, pix_fmt="bgr24", bitrate=None, resize=None, preset=None):
-    return FFmpegWriterStreamRT.VideoWriter(url, 'libx264', pix_fmt, bitrate, resize, preset)
+def VideoWriterStreamRT(
+    url, pix_fmt="bgr24", bitrate=None, resize=None, preset=None
+) -> FFmpegWriterStreamRT:
+    return FFmpegWriterStreamRT.VideoWriter(
+        url, "libx264", pix_fmt, bitrate, resize, preset
+    )
 
 
 def VideoCaptureCAM(
@@ -344,17 +376,17 @@ def VideoCaptureCAM(
 
     Use full camera parameter
     ```
-    cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera', 
-                                    camsize_wh = (1280,720), 
-                                    camfps = 30, 
+    cap = ffmpegcv.VideoCaptureCAM('FaceTime HD Camera',
+                                    camsize_wh = (1280,720),
+                                    camfps = 30,
                                     campix_fmt = 'nv12')
     ```
 
     Use camera with ROI operations
     ```
-    cap = ffmpegcv.VideoCaptureCAM("Integrated Camera", 
-                                    crop_xywh = (0, 0, 640, 480), 
-                                    resize = (512, 512), 
+    cap = ffmpegcv.VideoCaptureCAM("Integrated Camera",
+                                    crop_xywh = (0, 0, 640, 480),
+                                    resize = (512, 512),
                                     resize_keepratio = True)
     ```
     Author: Chenxinfeng 2023-05-11, cxf529125853@163.com
@@ -384,7 +416,7 @@ def VideoCaptureStream(
     resize=None,
     resize_keepratio=True,
     resize_keepratioalign="center",
-    timeout=None
+    timeout=None,
 ) -> FFmpegReaderStream:
     """
     Alternative to cv2.VideoCapture
@@ -438,7 +470,7 @@ def VideoCaptureStream(
         resize,
         resize_keepratio,
         resize_keepratioalign,
-        timeout
+        timeout,
     )
 
 
@@ -454,30 +486,30 @@ def VideoCaptureStreamRT(
     resize_keepratio=True,
     resize_keepratioalign="center",
     gpu=None,
-    timeout=None
+    timeout=None,
 ) -> FFmpegReaderStreamRT:
     if gpu is None:
         return FFmpegReaderStreamRT.VideoReader(
-            stream_url, 
-            codec, 
+            stream_url,
+            codec,
             pix_fmt,
             crop_xywh,
             resize,
             resize_keepratio,
             resize_keepratioalign,
-            timeout=timeout
+            timeout=timeout,
         )
     else:
         return FFmpegReaderStreamRTNV.VideoReader(
-            stream_url, 
-            codec, 
+            stream_url,
+            codec,
             pix_fmt,
             crop_xywh,
             resize,
             resize_keepratio,
             resize_keepratioalign,
             gpu=gpu,
-            timeout=timeout
+            timeout=timeout,
         )
 
 
@@ -485,11 +517,7 @@ VideoReaderStreamRT = VideoCaptureStreamRT
 
 
 def VideoCapturePannels(
-    file:str,
-    crop_xywh_l:list,
-    codec=None,
-    pix_fmt="bgr24",
-    resize=None
+    file: str, crop_xywh_l: list, codec=None, pix_fmt="bgr24", resize=None
 ):
     """
     Alternative to cv2.VideoCapture
@@ -511,7 +539,7 @@ def VideoCapturePannels(
 
     Examples
     --------
-    
+
 
     ffmpegcv
     ```
@@ -529,19 +557,21 @@ def VideoCapturePannels(
     """
 
     return FFmpegReaderPannels.VideoReader(
-        file, 
+        file,
         crop_xywh_l,
-        codec, 
+        codec,
         pix_fmt,
         resize,
     )
 
+
 VideoReaderPannels = VideoCapturePannels
 
 
-def toCUDA(vid:FFmpegReader, gpu:int=0, tensor_format:str='chw') -> FFmpegReader:
+def toCUDA(vid: FFmpegReader, gpu: int = 0, tensor_format: str = "chw") -> FFmpegReader:
     """
     Convert frames to CUDA tensor float32 in 'chw' or 'hwc' format.
     """
     from ffmpegcv.ffmpeg_reader_cuda import FFmpegReaderCUDA
+
     return FFmpegReaderCUDA(vid, gpu, tensor_format)

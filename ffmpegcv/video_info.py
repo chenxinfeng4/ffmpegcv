@@ -6,30 +6,33 @@ import xml.etree.ElementTree as ET
 import shlex
 import platform
 
-scan_the_whole = {'mkv', 'flv', 'ts'} #scan the whole file to the count, slow
+scan_the_whole = {"mkv", "flv", "ts"}  # scan the whole file to the count, slow
 
-_is_windows = platform.system() == 'Windows'
+_is_windows = platform.system() == "Windows"
 _inited_get_num_NVIDIA_GPUs = False
 _inited_get_num_QSV_GPUs = False
 _num_NVIDIA_GPUs = -1
 _num_QSV_GPUs = -1
 
-def get_info(video:str):
-    do_scan_the_whole = video.split('.')[-1] in scan_the_whole
+
+def get_info(video: str):
+    do_scan_the_whole = video.split(".")[-1] in scan_the_whole
 
     def ffprobe_info_(do_scan_the_whole):
-        use_count_packets = '-count_packets' if do_scan_the_whole else ''
-        cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams "{}"'.format(use_count_packets, video)
-        #cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams stream=pix_fmt "{}"'.format(use_count_packets, video)
+        use_count_packets = "-count_packets" if do_scan_the_whole else ""
+        cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams "{}"'.format(
+            use_count_packets, video
+        )
+        # cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams stream=pix_fmt "{}"'.format(use_count_packets, video)
         output = subprocess.check_output(shlex.split(cmd), shell=False)
         root = ET.fromstring(output)
         assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
         vinfo = root[0][0].attrib
         return vinfo
-    
+
     vinfo = ffprobe_info_(do_scan_the_whole)
 
-    if 'nb_frames' not in vinfo:
+    if "nb_frames" not in vinfo:
         do_scan_the_whole = True
         vinfo = ffprobe_info_(do_scan_the_whole)
 
@@ -40,32 +43,40 @@ def get_info(video:str):
         "VideoInfo", ["width", "height", "fps", "count", "codec", "duration"]
     )
     outinfo = dict()
-    outinfo['width'] = int(vinfo['width'])
-    outinfo['height'] = int(vinfo['height'])
-    outinfo['fps'] = eval(vinfo['r_frame_rate'])
-    outinfo['count'] = int(vinfo['nb_read_packets' if do_scan_the_whole
-                         else 'nb_frames']) #nb_read_packets | nb_frames
-    outinfo['codec'] = vinfo['codec_name']
-    #outinfo['pix_fmt'] = vinfo['pix_fmt']
+    outinfo["width"] = int(vinfo["width"])
+    outinfo["height"] = int(vinfo["height"])
+    outinfo["fps"] = eval(vinfo["r_frame_rate"])
+    outinfo["count"] = int(
+        vinfo["nb_read_packets" if do_scan_the_whole else "nb_frames"]
+    )  # nb_read_packets | nb_frames
+    outinfo["codec"] = vinfo["codec_name"]
+    # outinfo['pix_fmt'] = vinfo['pix_fmt']
 
-    outinfo['duration'] = (float(vinfo['duration']) if 'duration' in vinfo
-                            else outinfo['count']/outinfo['fps'])
+    outinfo["duration"] = (
+        float(vinfo["duration"])
+        if "duration" in vinfo
+        else outinfo["count"] / outinfo["fps"]
+    )
     videoinfo = VideoInfo(**outinfo)
 
     return videoinfo
 
 
-def get_info_precise(video:str):
+def get_info_precise(video: str):
     videoinfo = get_info(video)
-    cmd = ('ffprobe -v error -select_streams v:0 -show_entries frame=pts_time '
-           f' -of default=noprint_wrappers=1:nokey=1 -read_intervals 0%+#1,99999% "{video}"')
-    output = subprocess.check_output(shlex.split(cmd), shell=False, stderr=subprocess.DEVNULL)
+    cmd = (
+        "ffprobe -v error -select_streams v:0 -show_entries frame=pts_time "
+        f' -of default=noprint_wrappers=1:nokey=1 -read_intervals 0%+#1,99999% "{video}"'
+    )
+    output = subprocess.check_output(
+        shlex.split(cmd), shell=False, stderr=subprocess.DEVNULL
+    )
     pts_start, *_, pts_end = output.decode().split()
     pts_start, pts_end = float(pts_start), float(pts_end)
     videoinfod = videoinfo._asdict()
     duration_ = pts_end - pts_start
-    videoinfod['fps'] =  round((videoinfo.count - 1) / duration_, 3)
-    videoinfod['duration'] = round(duration_ + 1/videoinfod['fps'], 3)
+    videoinfod["fps"] = round((videoinfo.count - 1) / duration_, 3)
+    videoinfod["duration"] = round(duration_ + 1 / videoinfod["fps"], 3)
     videoinfo_precise = videoinfo.__class__(*videoinfod.values())
     return videoinfo_precise
 
@@ -114,7 +125,8 @@ def encoder_to_qsv(codec):
         "hevc": "hevc_qsv",
         "mjpeg": "mjpeg_qsv",
         "mpeg2video": "mpeg2_qsv",
-        "vp9": "vp9_qsv"}
+        "vp9": "vp9_qsv",
+    }
 
     if codec in codec_map:
         return codec_map[codec]
@@ -158,7 +170,8 @@ def decoder_to_qsv(codec):
         "mpeg2video": "mpeg2_qsv",
         "vc1": "vc1_qsv",
         "vp8": "vp8_qsv",
-        "vp9": "vp9_qsv"}
+        "vp9": "vp9_qsv",
+    }
 
     if codec in codec_map:
         return codec_map[codec]
@@ -183,7 +196,7 @@ def run_async(args, debug=True):
     )
 
 
-def release_process(process:Popen):
+def release_process(process: Popen):
     if hasattr(process, "stdin"):
         process.stdin.close()
     if hasattr(process, "stdout"):
