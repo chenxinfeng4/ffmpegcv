@@ -5,7 +5,7 @@ from ffmpegcv.ffmpeg_writer import FFmpegWriter
 class FFmpegWriterStreamRT(FFmpegWriter):
     @staticmethod
     def VideoWriter(filename:str, codec, pix_fmt, bitrate=None, resize=None, preset=None) -> FFmpegWriter:
-        assert codec in ['h264', 'libx264', 'x264']
+        assert codec in ['h264', 'libx264', 'x264', 'mpeg4']
         assert pix_fmt in ['bgr24', 'rgb24', 'gray']
         # assert filename.startswith('rtmp://'), 'currently only support rtmp'
         assert resize is None or len(resize) == 2
@@ -29,5 +29,5 @@ class FFmpegWriterStreamRT(FFmpegWriter):
                 f'{bitrate_str} -f flv '
                 f' -tune zerolatency -preset {self.preset} '
                 f'{filter_str} {rtsp_str} '
-                f' -c:v {self.codec} -pix_fmt yuv420p "{self.filename}"')
+                f' -c:v {self.codec} -g 50 -pix_fmt yuv420p "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
