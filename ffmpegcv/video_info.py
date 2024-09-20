@@ -201,7 +201,7 @@ def release_process(process: Popen):
         process.stdin.close()
     if hasattr(process, "stdout"):
         process.stdout.close()
-    if hasattr(process, "terminate") and not _is_windows:
-        process.terminate()
-    if hasattr(process, "wait"):
-        process.wait()
+    # if hasattr(process, "terminate") and not _is_windows:
+    #     process.terminate()
+    # if hasattr(process, "wait"):
+    #     process.wait()
