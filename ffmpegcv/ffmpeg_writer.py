@@ -57,11 +57,16 @@ class FFmpegWriter:
         filter_str = '' if self.resize == self.size else f'-vf scale={self.resize[0]}:{self.resize[1]}'
         target_pix_fmt = getattr(self, 'target_pix_fmt', 'yuv420p')
         preset_str = f'-preset {self.preset} ' if self.preset else ''
-
+        
+        if '265' in self.codec or 'hevc' in self.codec:
+            fix_vtag = '-tag:v hvc1'
+        else:
+            fix_vtag = ''
+        
         self.ffmpeg_cmd = (f'ffmpeg -y -loglevel warning ' 
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
                 f'{bitrate_str} '
-                f'-r {self.fps} -c:v {self.codec} '
+                f'-r {self.fps} -c:v {self.codec} {fix_vtag} '
                 f'{preset_str}'
                 f'{filter_str} {rtsp_str} '
                 f'-pix_fmt {target_pix_fmt} "{self.filename}"')
@@ -138,10 +143,16 @@ class FFmpegWriterNV(FFmpegWriter):
         bitrate_str = f'-b:v {self.bitrate} ' if self.bitrate else ''
         rtsp_str = f'-f rtsp' if self.filename.startswith('rtsp://') else ''
         filter_str = '' if self.resize == self.size else f'-vf scale={self.resize[0]}:{self.resize[1]}'
+        
+        if '265' in self.codec or 'hevc' in self.codec:
+            fix_vtag = '-tag:v hvc1'
+        else:
+            fix_vtag = ''
+
         self.ffmpeg_cmd = (f'ffmpeg -y -loglevel warning '
             f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: '
             f'-preset {self.preset} {bitrate_str} '
-            f'-r {self.fps} -gpu {self.gpu} -c:v {self.codec} '
+            f'-r {self.fps} -gpu {self.gpu} -c:v {self.codec} {fix_vtag}'
             f'{filter_str} {rtsp_str} '
             f'-pix_fmt yuv420p "{self.filename}"')
         self.process = run_async(self.ffmpeg_cmd)
