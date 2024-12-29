@@ -26,7 +26,7 @@ class FFmpegWriterStreamRT(FFmpegWriter):
         filter_str = '' if self.resize == self.size else f'-vf scale={self.resize[0]}:{self.resize[1]}'
         self.ffmpeg_cmd = (f'ffmpeg -loglevel warning ' 
                 f'-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -i pipe: '
-                f'{bitrate_str} -f flv '
+                f'{bitrate_str} -f flv -rtsp_transport tcp '
                 f' -tune zerolatency -preset {self.preset} '
                 f'{filter_str} {rtsp_str} '
                 f' -c:v {self.codec} -g 50 -pix_fmt yuv420p "{self.filename}"')

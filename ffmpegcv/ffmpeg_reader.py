@@ -241,7 +241,7 @@ class FFmpegReader:
 
     def release(self):
         self._isopen = False
-        release_process(self.process)
+        release_process(self.process, forcekill=True)
 
     def close(self):
         return self.release()

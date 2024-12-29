@@ -142,7 +142,7 @@ class Holder(PointerHolderBase):
         return self.gpudata
 
 
-def tensor_to_gpuarray(tensor):
+def tensor_to_gpuarray(tensor) -> gpuarray.GPUArray:
     '''Convert a :class:`torch.Tensor` to a :class:`pycuda.gpuarray.GPUArray`. The underlying
     storage will be shared, so that modifications to the array will reflect in the tensor object.
     Parameters

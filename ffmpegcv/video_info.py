@@ -196,12 +196,12 @@ def run_async(args, debug=True):
     )
 
 
-def release_process(process: Popen):
+def release_process(process: Popen, forcekill=False):
     if hasattr(process, "stdin"):
         process.stdin.close()
     if hasattr(process, "stdout"):
         process.stdout.close()
-    # if hasattr(process, "terminate") and not _is_windows:
-    #     process.terminate()
-    # if hasattr(process, "wait"):
-    #     process.wait()
+    if forcekill and hasattr(process, "terminate") and not _is_windows:
+        process.terminate()
+    if forcekill and hasattr(process, "wait"):
+        process.wait()
