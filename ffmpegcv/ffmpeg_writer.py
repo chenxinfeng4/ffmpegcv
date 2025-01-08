@@ -2,7 +2,7 @@ import numpy as np
 import warnings
 import pprint
 import sys
-from .video_info import run_async, release_process, get_num_NVIDIA_GPUs
+from .video_info import run_async, release_process_writer, get_num_NVIDIA_GPUs
 
 
 IN_COLAB = "google.colab" in sys.modules
@@ -93,7 +93,7 @@ class FFmpegWriter:
     def release(self):
         self._isopen = False
         if hasattr(self, "process"):
-            release_process(self.process)
+            release_process_writer(self.process)
 
     def close(self):
         return self.release()
