@@ -10,8 +10,14 @@ from .video_info import (
 )
 
 
-def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:list,
-               resize_keepratio:bool, resize_keepratioalign:str):
+def get_videofilter_cpu(
+    originsize: list,
+    pix_fmt: str,
+    crop_xywh: list,
+    resize: list,
+    resize_keepratio: bool,
+    resize_keepratioalign: str,
+):
     """
     ONGONING: common filter for video/cam/stream capture.
     """
@@ -19,7 +25,7 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
     origin_width, origin_height = originsize
     if crop_xywh:
         crop_w, crop_h = crop_xywh[2:]
-        assert all([n %2 == 0] for n in crop_xywh), "'crop_xywh' must be even number"
+        assert all([n % 2 == 0] for n in crop_xywh), "'crop_xywh' must be even number"
         assert crop_w <= origin_width and crop_h <= origin_height
         x, y, w, h = crop_xywh
         cropopt = f"crop={w}:{h}:{x}:{y}"
@@ -34,7 +40,7 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
         final_size_wh = crop_wh
     else:
         final_size_wh = (dst_width, dst_height) = resize
-        assert all([n %2 == 0] for n in resize), "'resize' must be even number"
+        assert all([n % 2 == 0] for n in resize), "'resize' must be even number"
         if not resize_keepratio:
             scaleopt = f"scale={dst_width}x{dst_height}"
             padopt = ""
@@ -47,10 +53,7 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
             if resize_keepratioalign is None:
                 resize_keepratioalign = "center"
             paddings = {
-                "center": (
-                    (dst_width - re_width) // 2,
-                    (dst_height - re_height) // 2,
-                ),
+                "center": ((dst_width - re_width) // 2, (dst_height - re_height) // 2,),
                 "topleft": (0, 0),
                 "topright": (dst_width - re_width, 0),
                 "bottomleft": (0, dst_height - re_height),
@@ -62,7 +65,7 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
             xpading, ypading = paddings[resize_keepratioalign]
             padopt = f"pad={dst_width}:{dst_height}:{xpading}:{ypading}:black"
 
-    pix_fmtopt = 'extractplanes=y' if pix_fmt=='gray' else ''
+    pix_fmtopt = "extractplanes=y" if pix_fmt == "gray" else ""
     if any([cropopt, scaleopt, padopt, pix_fmtopt]):
         filterstr = ",".join(x for x in [cropopt, scaleopt, padopt, pix_fmtopt] if x)
         filteropt = f"-vf {filterstr}"
@@ -71,21 +74,27 @@ def get_videofilter_cpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
     return crop_wh, final_size_wh, filteropt
 
 
-def get_videofilter_gpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:list,
-               resize_keepratio:bool, resize_keepratioalign:str):
+def get_videofilter_gpu(
+    originsize: list,
+    pix_fmt: str,
+    crop_xywh: list,
+    resize: list,
+    resize_keepratio: bool,
+    resize_keepratioalign: str,
+):
     assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "yuvj420p", "nv12", "gray"]
     origin_width, origin_height = originsize
     if crop_xywh:
         crop_w, crop_h = crop_xywh[2:]
-        assert all([n %2 == 0] for n in crop_xywh), "'crop_xywh' must be even number"
+        assert all([n % 2 == 0] for n in crop_xywh), "'crop_xywh' must be even number"
         assert crop_w <= origin_width and crop_h <= origin_height
         x, y, w, h = crop_xywh
         top, bottom, left, right = (
-                y,
-                origin_height - (y + h),
-                x,
-                origin_width - (x + w),
-            )  # crop length
+            y,
+            origin_height - (y + h),
+            x,
+            origin_width - (x + w),
+        )  # crop length
         cropopt = f"-crop {top}x{bottom}x{left}x{right}"
     else:
         crop_w, crop_h = origin_width, origin_height
@@ -98,7 +107,7 @@ def get_videofilter_gpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
         final_size_wh = crop_wh
     else:
         final_size_wh = (dst_width, dst_height) = resize
-        assert all([n %2 == 0] for n in resize), "'resize' must be even number"
+        assert all([n % 2 == 0] for n in resize), "'resize' must be even number"
         if not resize_keepratio:
             scaleopt = f"-resize {dst_width}x{dst_height}"
         else:
@@ -110,10 +119,7 @@ def get_videofilter_gpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
             if resize_keepratioalign is None:
                 resize_keepratioalign = "center"
             paddings = {
-                "center": (
-                    (dst_width - re_width) // 2,
-                    (dst_height - re_height) // 2,
-                ),
+                "center": ((dst_width - re_width) // 2, (dst_height - re_height) // 2,),
                 "topleft": (0, 0),
                 "topright": (dst_width - re_width, 0),
                 "bottomleft": (0, dst_height - re_height),
@@ -126,28 +132,28 @@ def get_videofilter_gpu(originsize:list, pix_fmt:str,  crop_xywh:list, resize:li
             padopt = f"pad={dst_width}:{dst_height}:{xpading}:{ypading}:black"
             filteropt = f"-vf {padopt}"
 
-    if pix_fmt=='gray':
+    if pix_fmt == "gray":
         if filteropt:
-            filteropt=f'{filteropt},extractplanes=y'
+            filteropt = f"{filteropt},extractplanes=y"
         else:
-            filteropt=f'-vf extractplanes=y'
+            filteropt = f"-vf extractplanes=y"
 
     return crop_wh, final_size_wh, [cropopt, scaleopt, filteropt]
-    
 
-def get_outnumpyshape(size_wh:list, pix_fmt:str) -> tuple:
+
+def get_outnumpyshape(size_wh: list, pix_fmt: str) -> tuple:
     width, height = size_wh
     assert (not pix_fmt == "yuv420p") or (
-            height % 2 == 0 and width % 2 == 0
-        ), "yuv420p must be even"
+        height % 2 == 0 and width % 2 == 0
+    ), "yuv420p must be even"
     out_numpy_shape = {
-            "rgb24": (height, width, 3),
-            "bgr24": (height, width, 3),
-            "yuv420p": (int(height * 1.5), width),
-            "yuvj420p": (int(height * 1.5), width),
-            "nv12": (int(height * 1.5), width),
-            "gray": (height, width, 1)
-        }[pix_fmt]
+        "rgb24": (height, width, 3),
+        "bgr24": (height, width, 3),
+        "yuv420p": (int(height * 1.5), width),
+        "yuvj420p": (int(height * 1.5), width),
+        "nv12": (int(height * 1.5), width),
+        "gray": (height, width, 1),
+    }[pix_fmt]
     return out_numpy_shape
 
 
@@ -210,16 +216,25 @@ class FFmpegReader:
         vid.pix_fmt = pix_fmt
         vid.codec = codec if codec else videoinfo.codec
 
-        (vid.crop_width, vid.crop_height), (vid.width, vid.height), filteropt = get_videofilter_cpu(
-                (vid.origin_width, vid.origin_height), pix_fmt, crop_xywh, resize, 
-                resize_keepratio, resize_keepratioalign)
+        (
+            (vid.crop_width, vid.crop_height),
+            (vid.width, vid.height),
+            filteropt,
+        ) = get_videofilter_cpu(
+            (vid.origin_width, vid.origin_height),
+            pix_fmt,
+            crop_xywh,
+            resize,
+            resize_keepratio,
+            resize_keepratioalign,
+        )
         vid.size = (vid.width, vid.height)
 
         vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning "
             f' -vcodec {vid.codec} -r {vid.fps} -i "{filename}" '
             f" {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:"
-        )  
+        )
         vid.out_numpy_shape = get_outnumpyshape(vid.size, pix_fmt)
         return vid
 
@@ -227,7 +242,7 @@ class FFmpegReader:
         if self.waitInit:
             self.process = run_async(self.ffmpeg_cmd)
             self.waitInit = False
-            
+
         in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
         if not in_bytes:
             self.release()
@@ -249,7 +264,13 @@ class FFmpegReader:
 
 class FFmpegReaderNV(FFmpegReader):
     def _get_opts(
-        vid, videoinfo, crop_xywh, resize, resize_keepratio, resize_keepratioalign, isgray
+        vid,
+        videoinfo,
+        crop_xywh,
+        resize,
+        resize_keepratio,
+        resize_keepratioalign,
+        isgray,
     ):
         vid.origin_width = videoinfo.width
         vid.origin_height = videoinfo.height
@@ -312,10 +333,10 @@ class FFmpegReaderNV(FFmpegReader):
 
         if isgray:
             if filteropt:
-                filteropt=f'{filteropt},extractplanes=y'
+                filteropt = f"{filteropt},extractplanes=y"
             else:
-                filteropt=f'-vf extractplanes=y'
-        
+                filteropt = f"-vf extractplanes=y"
+
         vid.size = (vid.width, vid.height)
         return cropopt, scaleopt, filteropt
 
@@ -343,7 +364,12 @@ class FFmpegReaderNV(FFmpegReader):
         vid = FFmpegReaderNV()
         isgray = pix_fmt == "gray"
         cropopt, scaleopt, filteropt = vid._get_opts(
-            videoinfo, crop_xywh, resize, resize_keepratio, resize_keepratioalign, isgray
+            videoinfo,
+            crop_xywh,
+            resize,
+            resize_keepratio,
+            resize_keepratioalign,
+            isgray,
         )
         vid.codecNV = decoder_to_nvidia(vid.codec)
 

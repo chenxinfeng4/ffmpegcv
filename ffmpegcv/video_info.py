@@ -23,7 +23,6 @@ def get_info(video: str):
         cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams "{}"'.format(
             use_count_packets, video
         )
-        # cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams stream=pix_fmt "{}"'.format(use_count_packets, video)
         output = subprocess.check_output(shlex.split(cmd), shell=False)
         root = ET.fromstring(output)
         assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
@@ -206,6 +205,7 @@ def release_process(process: Popen, forcekill=False):
     if forcekill and hasattr(process, "wait"):
         process.wait()
 
+
 def release_process_writer(process: Popen):
     if hasattr(process, "stdin"):
         process.stdin.close()
@@ -213,5 +213,3 @@ def release_process_writer(process: Popen):
         process.stdout.close()
     if hasattr(process, "wait"):
         process.wait()
-    if hasattr(process, "terminate") and not _is_windows:
-        process.terminate()

@@ -25,7 +25,7 @@ class FFmpegReaderQSV(FFmpegReader):
         assert os.path.exists(filename) and os.path.isfile(
             filename
         ), f"{filename} not exists"
-        assert gpu is None or gpu == 0, 'Cannot use multiple QSV gpu yet.'
+        assert gpu is None or gpu == 0, "Cannot use multiple QSV gpu yet."
         numGPU = get_num_QSV_GPUs()
         assert numGPU > 0, "No GPU found"
         gpu = int(gpu) % numGPU if gpu is not None else 0
@@ -43,9 +43,18 @@ class FFmpegReaderQSV(FFmpegReader):
         vid.codecQSV = decoder_to_qsv(videoinfo.codec)
         vid.pix_fmt = pix_fmt
 
-        (vid.crop_width, vid.crop_height), (vid.width, vid.height), filteropt = get_videofilter_cpu(
-                (vid.origin_width, vid.origin_height), pix_fmt, crop_xywh, resize, 
-                resize_keepratio, resize_keepratioalign)
+        (
+            (vid.crop_width, vid.crop_height),
+            (vid.width, vid.height),
+            filteropt,
+        ) = get_videofilter_cpu(
+            (vid.origin_width, vid.origin_height),
+            pix_fmt,
+            crop_xywh,
+            resize,
+            resize_keepratio,
+            resize_keepratioalign,
+        )
         vid.size = (vid.width, vid.height)
 
         vid.ffmpeg_cmd = (

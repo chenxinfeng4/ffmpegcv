@@ -186,7 +186,7 @@ cap = ffmpegcv.VideoCapture(file, resize=(640, 480))
 cap = ffmpegcv.VideoCapture(file, resize=(640, 480), resize_keepratio=True)
 ```
 
-对视频进行**裁剪**，然后进行**调整大小**。
+对视频进行**裁剪**，然后进行**调整大小**。左上角为坐标 (0,0)。
 ```python
 cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480), resize=(512, 512))
 ```

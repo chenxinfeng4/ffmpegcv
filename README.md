@@ -44,11 +44,11 @@ You need to download ffmpeg before you can use ffmpegcv.
  #1C. WINDOWS: download ffmpeg and add to the path
  #1D. CONDA: conda install ffmpeg=6.0.0     #don't use the default 4.x.x version
  
- #2. python
+ #2A. python
  pip install ffmpegcv                                      #stable verison
  pip install git+https://github.com/chenxinfeng4/ffmpegcv  #latest verison
 
- #3. recommand when using cuda
+ #2B. recommand only when you want advanced functions. See the toCUDA section
  pip install ffmpegcv[cuda]
 ```
 
@@ -179,7 +179,7 @@ plt.imshow(frame)
 ### ROI Operations
 You can crop, resize and pad the video. These ROI operation is `ffmpegcv-GPU` > `ffmpegcv-CPU` >> `opencv`.
 
-**Crop** video, which will be much faster than read the whole canvas.
+**Crop** video, which will be much faster than read the whole canvas. The top-left corner is (0, 0).
 ```python
 cap = ffmpegcv.VideoCapture(file, crop_xywh=(0, 0, 640, 480))
 ```
