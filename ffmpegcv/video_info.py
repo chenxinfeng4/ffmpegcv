@@ -2,7 +2,7 @@ import subprocess
 from subprocess import Popen, PIPE
 import re
 from collections import namedtuple
-import xml.etree.ElementTree as ET
+import json
 import shlex
 import platform
 
@@ -19,14 +19,13 @@ def get_info(video: str):
     do_scan_the_whole = video.split(".")[-1] in scan_the_whole
 
     def ffprobe_info_(do_scan_the_whole):
-        use_count_packets = "-count_packets" if do_scan_the_whole else ""
-        cmd = 'ffprobe -v quiet -print_format xml -select_streams v:0 {} -show_format -show_streams "{}"'.format(
-            use_count_packets, video
-        )
+        use_count_packets = '-count_packets' if do_scan_the_whole else ''
+        cmd = 'ffprobe -v quiet -print_format json=compact=1 -select_streams v:0 {}  -show_streams "{}"'.format(
+            use_count_packets, video)
+
         output = subprocess.check_output(shlex.split(cmd), shell=False)
-        root = ET.fromstring(output)
-        assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
-        vinfo = root[0][0].attrib
+        data: dict = json.loads(output)
+        vinfo: dict = data['streams'][0]
         return vinfo
 
     vinfo = ffprobe_info_(do_scan_the_whole)

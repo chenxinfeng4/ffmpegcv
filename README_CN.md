@@ -239,6 +239,7 @@ out.release()
 
 # ffmpegcv，默认的编码器为'h264'在CPU上，'h265'在GPU上。
 # 帧大小由第一帧决定
+# 使用 'mp4/mkv' 来替代古老的 'avi' 格式
 out = ffmpegcv.VideoWriter('outpy.mp4', None, 10)
 out.write(frame1)
 out.write(frame2)

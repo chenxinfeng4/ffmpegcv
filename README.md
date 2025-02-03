@@ -237,6 +237,7 @@ How can `toCUDA` make it faster in your deeplearning pipeline than `opencv` or `
 
 ## Video Writer
 ---
+
 ```python
 # cv2
 out = cv2.VideoWriter('outpy.avi',
@@ -248,7 +249,8 @@ out.write(frame2)
 out.release()
 
 # ffmpegcv, default codec is 'h264' in cpu 'h265' in gpu.
-# frameSize is decided by the size of the first frame
+# frameSize is decided by the size of the first frame.
+# use the 'mp4/mkv' instead of 'avi' to avoid the codec outdated.
 out = ffmpegcv.VideoWriter('outpy.mp4', None, 10)
 out.write(frame1)
 out.write(frame2)

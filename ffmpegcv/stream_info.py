@@ -1,18 +1,17 @@
 import subprocess
 from collections import namedtuple
-import xml.etree.ElementTree as ET
+import json
 import shlex
 
 
-def get_info(stream_url, timeout=None):
-    rtspflag = "-rtsp_transport tcp" if stream_url.startswith("rtsp://") else ""
-    cmd = 'ffprobe -v quiet -print_format xml {} -select_streams v:0 -show_format -show_streams "{}"'.format(
-        rtspflag, stream_url
-    )
+def get_info(stream_url, timeout=None, duration_ms: int = 100):
+    rtsp_opt = '' if not stream_url.startswith('rtsp://') else '-rtsp_flags prefer_tcp -pkt_size 736 '
+    analyze_duration = f'-analyzeduration {duration_ms * 1000}'
+    cmd = (f'ffprobe -v quiet -print_format json=compact=1 {rtsp_opt} {analyze_duration} '
+           f'-select_streams v:0 -show_format -show_streams "{stream_url}"')
     output = subprocess.check_output(shlex.split(cmd), shell=False, timeout=timeout)
-    root = ET.fromstring(output)
-    assert (root[0].tag, root[0][0].tag) == ("streams", "stream")
-    vinfo = root[0][0].attrib
+    data: dict = json.loads(output)
+    vinfo: dict = data['streams'][0]
 
     StreamInfo = namedtuple(
         "StreamInfo", ["width", "height", "fps", "count", "codec", "duration"]
