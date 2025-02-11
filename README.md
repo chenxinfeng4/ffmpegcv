@@ -6,7 +6,7 @@
 )
 ![Last Commit](https://shields.io/github/last-commit/chenxinfeng4/ffmpegcv)
 
-English Version | [中文版本](./README_CN.md) | [Resume 开发者简历 陈昕枫](https://gitee.com/lilab/chenxinfeng-cv/blob/master/README.md)
+English Version | [中文版本](./README_CN.md)
 
 The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2. Integrating ffmpegcv into your deeplearning pipeline is very smooth.
 
