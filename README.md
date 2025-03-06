@@ -1,4 +1,4 @@
-# FFMPEGCV is an alternative to OPENCV for video read and write.
+# FFMPEGCV is an alternative to OPENCV for video reading&writing.
 ![Python versions](https://img.shields.io/badge/Python-3.6%2B-blue.svg)
 [![PyPI version](https://img.shields.io/pypi/v/ffmpegcv.svg?logo=pypi&logoColor=FFE873)](https://pypi.org/project/ffmpegcv/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/ffmpegcv.svg)](https://pypistats.org/packages/ffmpegcv)
@@ -7,6 +7,8 @@
 ![Last Commit](https://shields.io/github/last-commit/chenxinfeng4/ffmpegcv)
 
 English Version | [中文版本](./README_CN.md)
+
+Here is the Python version of ffmpegcv. For the C++ version, please visit [FFMPEGCV-CPP](https://github.com/chenxinfeng4/ffmpegcv-cpp)
 
 The ffmpegcv provide Video Reader and Video Witer with ffmpeg backbone, which are faster and powerful than cv2. Integrating ffmpegcv into your deeplearning pipeline is very smooth.
 
@@ -55,7 +57,7 @@ You need to download ffmpeg before you can use ffmpegcv.
 ## When should choose `ffmpegcv` other than `opencv`:
 - The `opencv` is hard to install. The ffmpegcv only requires `numpy` and `FFmpeg`, works across Mac/Windows/Linux platforms.
 - The `opencv` packages too much image processing toolbox. You just want a simple video/camero IO with GPU accessible.
-- The `opencv` didn't support `h264`/`h265` and other video writers.
+- The `opencv` didn't support profiling `h264`/`h265` and other video writers.
 - You want to **crop**, **resize** and **pad** the video/camero ROI.
 - You are interested in deeplearning pipeline.
 ## Basic example
@@ -163,7 +165,6 @@ Use GPU to accelerate decoding. It depends on the video codes.
 h264_nvcuvid, hevc_nvcuvid ....
 ```python
 cap_cpu = ffmpegcv.VideoCapture(file)
-cap_gpu = ffmpegcv.VideoCapture(file, codec='h264_cuvid') #NVIDIA GPU0
 cap_gpu0 = ffmpegcv.VideoCaptureNV(file)         #NVIDIA GPU0
 cap_gpu1 = ffmpegcv.VideoCaptureNV(file, gpu=1)  #NVIDIA GPU1
 cap_qsv = ffmpegcv.VideoCaptureQSV(file)         #Intel QSV, experimental
