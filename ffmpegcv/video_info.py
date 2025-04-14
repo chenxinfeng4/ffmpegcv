@@ -179,9 +179,7 @@ def decoder_to_qsv(codec):
         raise Exception("No QSV codec found for %s" % codec)
 
 
-def run_async(args, debug=True):
-    # stderr_stream = None if debug else subprocess.DEVNULL
-    stderr_stream = subprocess.PIPE
+def run_async(args):
     bufsize = -1
     if isinstance(args, str):
         args = shlex.split(args)
@@ -189,7 +187,7 @@ def run_async(args, debug=True):
         args,
         stdin=PIPE,
         stdout=PIPE,
-        stderr=stderr_stream,
+        stderr=PIPE,
         shell=False,
         bufsize=bufsize,
     )

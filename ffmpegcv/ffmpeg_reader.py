@@ -254,18 +254,21 @@ class FFmpegReader:
         if self.waitInit:
             self.process = run_async(self.ffmpeg_cmd)
             self.waitInit = False
+            
+        in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
 
-        # check the self.process.stderr (subprocess.PIPE) for any errors
+        # check if ffmpeg process error
         stderrreadable, _, _ = select.select([self.process.stderr], [], [], 0)
         if stderrreadable:
             data = self.process.stderr.read(1024)
             sys.stderr.buffer.write(data)
-        in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
+
         if not in_bytes:
             self.release()
             return False, None
         self.iframe += 1
         img = np.frombuffer(in_bytes, np.uint8).reshape(self.out_numpy_shape)
+
         return True, img
 
     def isOpened(self):
