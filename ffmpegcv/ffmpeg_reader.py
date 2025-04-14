@@ -1,6 +1,9 @@
 import numpy as np
 import pprint
+import warnings
 import os
+import sys
+import select
 from .video_info import (
     run_async,
     get_info,
@@ -25,7 +28,9 @@ def get_videofilter_cpu(
     origin_width, origin_height = originsize
     if crop_xywh:
         crop_w, crop_h = crop_xywh[2:]
-        assert all([n % 2 == 0] for n in crop_xywh), "'crop_xywh' must be even number"
+        if not all([n % 2 == 0] for n in crop_xywh):
+            print("Warning 'crop_xywh' would be replaced into even numbers")
+            crop_xywh = [int(n//2*2) for n in crop_xywh]
         assert crop_w <= origin_width and crop_h <= origin_height
         x, y, w, h = crop_xywh
         cropopt = f"crop={w}:{h}:{x}:{y}"
@@ -214,7 +219,14 @@ class FFmpegReader:
         vid.count = videoinfo.count
         vid.duration = videoinfo.duration
         vid.pix_fmt = pix_fmt
-        vid.codec = codec if codec else videoinfo.codec
+        vid.codec = videoinfo.codec
+        
+        if codec is not None:
+            warnings.warn(
+                "The 'codec' parameter is auto detected and will be removed " 
+                "in future versions. Please refrain from using this parameter.",
+                DeprecationWarning
+            )
 
         (
             (vid.crop_width, vid.crop_height),
@@ -231,7 +243,7 @@ class FFmpegReader:
         vid.size = (vid.width, vid.height)
 
         vid.ffmpeg_cmd = (
-            f"ffmpeg -loglevel warning "
+            f"ffmpeg -loglevel error "
             f' -vcodec {vid.codec} -r {vid.fps} -i "{filename}" '
             f" {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:"
         )
@@ -243,6 +255,11 @@ class FFmpegReader:
             self.process = run_async(self.ffmpeg_cmd)
             self.waitInit = False
 
+        # check the self.process.stderr (subprocess.PIPE) for any errors
+        stderrreadable, _, _ = select.select([self.process.stderr], [], [], 0)
+        if stderrreadable:
+            data = self.process.stderr.read(1024)
+            sys.stderr.buffer.write(data)
         in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
         if not in_bytes:
             self.release()
@@ -374,7 +391,7 @@ class FFmpegReaderNV(FFmpegReader):
         vid.codecNV = decoder_to_nvidia(vid.codec)
 
         vid.ffmpeg_cmd = (
-            f"ffmpeg -loglevel warning -hwaccel cuda -hwaccel_device {gpu} "
+            f"ffmpeg -loglevel error -hwaccel cuda -hwaccel_device {gpu} "
             f' -vcodec {vid.codecNV} {cropopt} {scaleopt} -r {vid.fps} -i "{filename}" '
             f" {filteropt} -pix_fmt {pix_fmt} -r {vid.fps} -f rawvideo pipe:"
         )

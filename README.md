@@ -378,7 +378,7 @@ Becareful when using it.
 
 - Support `RTSP`, `RTP`, `RTMP`, `HTTP`, `HTTPS` streams.
 - The `VideoCaptureStream` will be laggy and dropping frames if your post-process takes long time. The VideoCaptureCAM will buffer the recent frames.
-- The `VideoCaptureStream` is continously working on background even if you didn't read it. **Please release it in time**.
+- The `VideoCaptureStreamRT` is continously working on background even if you didn't read it. **Please release it in time**.
 - **Low latency** RTSP IP camera reader. Batter than opencv.
 - *It's still experimental*. Recommand you to use opencv.
 

@@ -180,7 +180,8 @@ def decoder_to_qsv(codec):
 
 
 def run_async(args, debug=True):
-    stderr_stream = None if debug else subprocess.DEVNULL
+    # stderr_stream = None if debug else subprocess.DEVNULL
+    stderr_stream = subprocess.PIPE
     bufsize = -1
     if isinstance(args, str):
         args = shlex.split(args)
@@ -199,6 +200,8 @@ def release_process(process: Popen, forcekill=False):
         process.stdin.close()
     if hasattr(process, "stdout"):
         process.stdout.close()
+    if hasattr(process, "stderr"):
+        process.stderr.close()
     if forcekill and hasattr(process, "terminate") and not _is_windows:
         process.terminate()
     if forcekill and hasattr(process, "wait"):

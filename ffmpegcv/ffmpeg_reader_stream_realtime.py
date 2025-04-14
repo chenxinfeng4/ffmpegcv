@@ -48,9 +48,9 @@ class FFmpegReaderStreamRT(FFmpegReader):
         )
         vid.size = (vid.width, vid.height)
 
-        rtsp_opt = "-rtsp_transport tcp " if stream_url.startswith("rtsp://") else ""
+        rtsp_opt = '' if not stream_url.startswith('rtsp://') else '-rtsp_flags prefer_tcp -pkt_size 736 '
         vid.ffmpeg_cmd = (
-            f"ffmpeg -loglevel warning "
+            f"ffmpeg -loglevel error "
             f" {rtsp_opt} "
             "-fflags nobuffer -flags low_delay -strict experimental "
             f" -vcodec {vid.codec} -i {stream_url}"
@@ -108,7 +108,7 @@ class FFmpegReaderStreamRTNV(FFmpegReader):
 
         rtsp_opt = "-rtsp_transport tcp " if stream_url.startswith("rtsp://") else ""
         vid.ffmpeg_cmd = (
-            f"ffmpeg -loglevel warning -hwaccel cuda -hwaccel_device {gpu} "
+            f"ffmpeg -loglevel error -hwaccel cuda -hwaccel_device {gpu} "
             f" {rtsp_opt} "
             f"{cropopt} {scaleopt} "
             "-fflags nobuffer -flags low_delay -strict experimental "

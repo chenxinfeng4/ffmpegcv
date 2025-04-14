@@ -1,6 +1,7 @@
 import numpy as np
 import warnings
 import pprint
+import select
 import sys
 from .video_info import run_async, release_process_writer, get_num_NVIDIA_GPUs
 
@@ -65,7 +66,7 @@ class FFmpegWriter:
         preset_str = f"-preset {self.preset} " if self.preset else ""
 
         self.ffmpeg_cmd = (
-            f"ffmpeg -y -loglevel warning "
+            f"ffmpeg -y -loglevel error "
             f"-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: "
             f"{bitrate_str} "
             f"-r {self.fps} -c:v {self.codec} "
@@ -94,6 +95,11 @@ class FFmpegWriter:
         assert self.in_numpy_shape == img.shape
         img = img.astype(np.uint8).tobytes()
         self.process.stdin.write(img)
+
+        stderrreadable, _, _ = select.select([self.process.stderr], [], [], 0)
+        if stderrreadable:
+            data = self.process.stderr.read(1024)
+            sys.stderr.buffer.write(data)
 
     def isOpened(self):
         return self._isopen
@@ -153,7 +159,7 @@ class FFmpegWriterNV(FFmpegWriter):
             else f"-vf scale={self.resize[0]}:{self.resize[1]}"
         )
         self.ffmpeg_cmd = (
-            f"ffmpeg -y -loglevel warning "
+            f"ffmpeg -y -loglevel error "
             f"-f rawvideo -pix_fmt {self.pix_fmt} -s {self.width}x{self.height} -r {self.fps} -i pipe: "
             f"-preset {self.preset} {bitrate_str} "
             f"-r {self.fps} -gpu {self.gpu} -c:v {self.codec} "

@@ -51,7 +51,7 @@ class FFmpegReaderStream(FFmpegReaderCAM):
         )
         vid.size = (vid.width, vid.height)
 
-        rtsp_opt = "-rtsp_transport tcp " if stream_url.startswith("rtsp://") else ""
+        rtsp_opt = '' if not stream_url.startswith('rtsp://') else '-rtsp_flags prefer_tcp -pkt_size 736 '
         vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning "
             f" {rtsp_opt} "
@@ -113,7 +113,7 @@ class FFmpegReaderStreamNV(FFmpegReaderCAM):
         )
         vid.size = (vid.width, vid.height)
 
-        rtsp_opt = "-rtsp_transport tcp " if stream_url.startswith("rtsp://") else ""
+        rtsp_opt = '' if not stream_url.startswith('rtsp://') else '-rtsp_flags prefer_tcp -pkt_size 736 '
         vid.ffmpeg_cmd = (
             f"ffmpeg -loglevel warning -hwaccel cuda -hwaccel_device {gpu} "
             f" {rtsp_opt} "
