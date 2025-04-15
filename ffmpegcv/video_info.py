@@ -192,13 +192,27 @@ def run_async(args):
         bufsize=bufsize,
     )
 
+def run_async_reader(args):
+    bufsize = -1
+    if isinstance(args, str):
+        args = shlex.split(args)
+
+    return Popen(
+        args,
+        stdin=None,
+        stdout=PIPE,
+        stderr=subprocess.DEVNULL,
+        shell=False,
+        bufsize=bufsize,
+    )
+
 
 def release_process(process: Popen, forcekill=False):
-    if hasattr(process, "stdin"):
+    if hasattr(process, "stdin") and process.stdin is not None:
         process.stdin.close()
-    if hasattr(process, "stdout"):
+    if hasattr(process, "stdout") and process.stdout is not None:
         process.stdout.close()
-    if hasattr(process, "stderr"):
+    if hasattr(process, "stderr") and process.stderr is not None:
         process.stderr.close()
     if forcekill and hasattr(process, "terminate") and not _is_windows:
         process.terminate()

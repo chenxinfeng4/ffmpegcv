@@ -5,7 +5,7 @@ import os
 import sys
 import select
 from .video_info import (
-    run_async,
+    run_async_reader as run_async,
     get_info,
     get_num_NVIDIA_GPUs,
     decoder_to_nvidia,
@@ -254,14 +254,14 @@ class FFmpegReader:
         if self.waitInit:
             self.process = run_async(self.ffmpeg_cmd)
             self.waitInit = False
-            
+        
         in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
-
         # check if ffmpeg process error
-        stderrreadable, _, _ = select.select([self.process.stderr], [], [], 0)
-        if stderrreadable:
-            data = self.process.stderr.read(1024)
-            sys.stderr.buffer.write(data)
+        # if self.process.stderr.readable():
+        #     print('---a')
+        #     data = self.process.stderr.read()
+        #     sys.stderr.buffer.write(data)
+        #     print('---f')
 
         if not in_bytes:
             self.release()
