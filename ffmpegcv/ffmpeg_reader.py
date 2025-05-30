@@ -164,14 +164,16 @@ def get_outnumpyshape(size_wh: list, pix_fmt: str) -> tuple:
 
 class FFmpegReader:
     def __init__(self):
-        self.iframe = -1
-        self.width = None
-        self.height = None
+        self.filename:str = ''
+        self.iframe:int = -1
+        self.width:int = None
+        self.height:int = None
         self.size = (None, None)
-        self.waitInit = True
+        self.waitInit:bool = True
         self.process = None
-        self._isopen = True
-        self.debug = False
+        self._isopen:bool = True
+        self.debug:bool = False
+        self.fps:float = None
         self.out_numpy_shape = (None, None, None)
 
     def __repr__(self):
@@ -212,6 +214,7 @@ class FFmpegReader:
         ), f"{filename} not exists"
 
         vid = FFmpegReader()
+        vid.filename = filename
         videoinfo = get_info(filename)
         vid.origin_width = videoinfo.width
         vid.origin_height = videoinfo.height
@@ -382,6 +385,7 @@ class FFmpegReaderNV(FFmpegReader):
         ), "resize must be a tuple of (width, height)"
         videoinfo = get_info(filename)
         vid = FFmpegReaderNV()
+        vid.filename = filename
         isgray = pix_fmt == "gray"
         cropopt, scaleopt, filteropt = vid._get_opts(
             videoinfo,

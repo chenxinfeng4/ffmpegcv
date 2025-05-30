@@ -19,7 +19,7 @@ def get_info(stream_url, timeout=None, duration_ms: int = 100):
     outinfo = dict()
     outinfo["width"] = int(vinfo["width"])
     outinfo["height"] = int(vinfo["height"])
-    outinfo["fps"] = eval(vinfo["r_frame_rate"])
+    outinfo["fps"] = eval(vinfo.get("avg_frame_rate", vinfo["r_frame_rate"]))
     outinfo["count"] = None
     outinfo["codec"] = vinfo["codec_name"]
     outinfo["duration"] = None

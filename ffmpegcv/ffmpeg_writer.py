@@ -147,7 +147,7 @@ class FFmpegWriterNV(FFmpegWriter):
         vid.gpu = gpu
         vid.bitrate = bitrate
         vid.resize = resize
-        vid.preset = preset if preset is not None else ("default" if IN_COLAB else "p2")
+        vid.preset = preset if preset is not None else ("default" if IN_COLAB else "fast")
         return vid
 
     def _init_video_stream(self):
