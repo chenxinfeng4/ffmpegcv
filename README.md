@@ -1,7 +1,7 @@
 # FFMPEGCV is an alternative to OPENCV for video reading&writing.
 ![Python versions](https://img.shields.io/badge/Python-3.6%2B-blue.svg)
 [![PyPI version](https://img.shields.io/pypi/v/ffmpegcv.svg?logo=pypi&logoColor=FFE873)](https://pypi.org/project/ffmpegcv/)
-[![PyPI downloads](https://img.shields.io/pypi/dm/ffmpegcv.svg)](https://pypistats.org/packages/ffmpegcv)
+[![PyPI downloads](https://static.pepy.tech/badge/ffmpegcv/month)](https://pepy.tech/project/ffmpegcv)
 ![Code size](https://shields.io/github/languages/code-size/chenxinfeng4/ffmpegcv
 )
 ![Last Commit](https://shields.io/github/last-commit/chenxinfeng4/ffmpegcv)
