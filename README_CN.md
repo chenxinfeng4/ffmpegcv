@@ -47,6 +47,37 @@ ffmpegcv提供了基于ffmpeg的视频读取器和视频编写器，比cv2更快
  pip install git+https://github.com/chenxinfeng4/ffmpegcv  #latest verison
  ```
 
+## 借助 AI Agent 使用本工具
+
+本仓库内置了专为 AI 编程 Agent 编写的文档，Claude Code、Cursor、Codex、Gemini CLI、GitHub
+Copilot 等工具可以直接读懂并正确调用本库，无需猜测 API。
+
+| 文件 | 用途 |
+| ---- | ---- |
+| [`AGENTS.md`](./AGENTS.md) | Agent 入口文档：硬性规则、任务配方、API 总览、目录结构、完成标准。 |
+| [`docs/agents/quickstart.md`](./docs/agents/quickstart.md) | 可直接复制的示例：读写、ROI、GPU、CUDA、摄像头、RTSP、noblock。 |
+| [`docs/agents/api-reference.md`](./docs/agents/api-reference.md) | 精确的函数签名、默认值、像素格式与形状对照表。 |
+| [`docs/agents/architecture.md`](./docs/agents/architecture.md) | 模块图、ffmpeg 命令模板、进程/线程模型。 |
+| [`docs/agents/troubleshooting.md`](./docs/agents/troubleshooting.md) | 报错 → 原因 → 解决方案。 |
+| [`docs/agents/testing.md`](./docs/agents/testing.md) | 如何运行和扩展兼容性测试。 |
+| [`llms.txt`](./llms.txt) | 供 LLM 抓取器读取的文档索引。 |
+
+**使用方法**：在支持自动读取 `AGENTS.md` 的 Agent 中打开本项目（或你自己的项目），然后用自然
+语言描述需求。一个好的起始提示词：
+
+> 阅读 `AGENTS.md`，然后写一个脚本：以 RGB 读取 `input.mp4`，按比例缩放到 640×480，对每帧跑
+> 模型推理，再用 H.264 把带标注的结果写入 `output.mp4`。并按照 `docs/agents/testing.md` 验证。
+
+常用的追加指令：
+
+- “如果有 NVIDIA GPU 就用 `VideoCaptureNV`，否则回退到 `VideoCapture`。”
+- “运行兼容性测试，并告诉我 `failed_expectations` 的内容。”
+- “用 `ffmpegcv.noblock` 包裹读取循环，让推理与解码重叠。”
+
+**Agent 会遵守的关键规则**（详见 [`AGENTS.md`](./AGENTS.md)）：`ffmpeg` 与 `ffprobe` 必须在
+`PATH` 中；读写器必须 `release()`（推荐 `with` 语句）；读取到的帧是只读 numpy 视图，修改前需
+`copy()`；`resize` 的宽高必须是偶数。
+
 ## 何时选择 `ffmpegcv` 而不是 `opencv`：
 - 安装`opencv`比较困难。ffmpegcv仅需要`numpy`和`FFmpeg`，可以在Mac/Windows/Linux平台上工作。
 - `opencv`包含太多的图像处理工具箱，而您只是想使用带GPU支持的简单视频/摄像头输入输出操作。

@@ -3,6 +3,9 @@ import warnings
 import pprint
 import select
 import sys
+from types import TracebackType
+from typing import Any, Optional, Sequence, Tuple, Type
+
 from .video_info import run_async, release_process_writer, get_num_NVIDIA_GPUs
 
 
@@ -10,39 +13,61 @@ IN_COLAB = "google.colab" in sys.modules
 
 
 class FFmpegWriter:
-    def __init__(self):
-        self.iframe = -1
-        self.size = None
-        self.width, self.height = None, None
-        self.waitInit = True
-        self._isopen = True
+    # Attributes initialized by the `VideoWriter` factory methods.
+    fps: float
+    codec: str
+    pix_fmt: str
+    filename: str
+    bitrate: Optional[str]
+    resize: Optional[Sequence[int]]
+    preset: Optional[str]
+    in_numpy_shape: Sequence[int]
 
-    def __enter__(self):
+    def __init__(self) -> None:
+        self.iframe: int = -1
+        self.size: Optional[Tuple[int, int]] = None
+        self.width: Optional[int] = None
+        self.height: Optional[int] = None
+        self.waitInit: bool = True
+        self._isopen: bool = True
+        self.process: Any = None
+
+    def __enter__(self) -> "FFmpegWriter":
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         self.release()
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.release()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         props = pprint.pformat(self.__dict__).replace("{", " ").replace("}", " ")
         return f"{self.__class__}\n" + props
 
     @staticmethod
     def VideoWriter(
-        filename, codec, fps, pix_fmt, bitrate=None, resize=None, preset=None
-    ):
+        filename: str,
+        codec: Optional[str],
+        fps: float,
+        pix_fmt: str,
+        bitrate: Optional[str] = None,
+        resize: Optional[Sequence[int]] = None,
+        preset: Optional[str] = None
+    ) -> "FFmpegWriter":
         if codec is None:
             codec = "h264"
         elif not isinstance(codec, str):
             codec = "h264"
-            warnings.simplefilter(
-                """
-                Codec should be a string. Eg `h264`, `h264_nvenc`. 
-                You may used CV2.VideoWriter_fourcc, which will be ignored.
-                """
+            warnings.warn(
+                "Codec should be a string. Eg `h264`, `h264_nvenc`. "
+                "You may used CV2.VideoWriter_fourcc, which will be ignored.",
+                UserWarning,
             )
         assert resize is None or len(resize) == 2
 
@@ -54,7 +79,8 @@ class FFmpegWriter:
         vid.preset = preset
         return vid
 
-    def _init_video_stream(self):
+    def _init_video_stream(self) -> None:
+        assert self.resize is not None
         bitrate_str = f"-b:v {self.bitrate} " if self.bitrate else ""
         rtsp_str = f"-f rtsp" if self.filename.startswith("rtsp://") else ""
         filter_str = (
@@ -76,7 +102,7 @@ class FFmpegWriter:
         )
         self.process = run_async(self.ffmpeg_cmd)
 
-    def write(self, img: np.ndarray):
+    def write(self, img: np.ndarray) -> None:
         if self.waitInit:
             if self.pix_fmt in ("nv12", "yuv420p", "yuvj420p"):
                 height_15, width = img.shape[:2]
@@ -101,23 +127,32 @@ class FFmpegWriter:
             data = self.process.stderr.read(1024)
             sys.stderr.buffer.write(data)
 
-    def isOpened(self):
+    def isOpened(self) -> bool:
         return self._isopen
 
-    def release(self):
+    def release(self) -> None:
         self._isopen = False
         if hasattr(self, "process"):
             release_process_writer(self.process)
 
-    def close(self):
+    def close(self) -> None:
         return self.release()
 
 
 class FFmpegWriterNV(FFmpegWriter):
+    gpu: int
+
     @staticmethod
-    def VideoWriter(
-        filename, codec, fps, pix_fmt, gpu, bitrate=None, resize=None, preset=None
-    ):
+    def VideoWriter(  # type: ignore[override]
+        filename: str,
+        codec: Optional[str],
+        fps: float,
+        pix_fmt: str,
+        gpu: Optional[int],
+        bitrate: Optional[str] = None,
+        resize: Optional[Sequence[int]] = None,
+        preset: Optional[str] = None
+    ) -> "FFmpegWriterNV":
         numGPU = get_num_NVIDIA_GPUs()
         assert numGPU
         gpu = int(gpu) % numGPU if gpu is not None else 0
@@ -125,11 +160,10 @@ class FFmpegWriterNV(FFmpegWriter):
             codec = "hevc_nvenc"
         elif not isinstance(codec, str):
             codec = "hevc_nvenc"
-            warnings.simplefilter(
-                """
-                Codec should be a string. Eg `h264`, `h264_nvenc`. 
-                You may used CV2.VideoWriter_fourcc, which will be ignored.
-                """
+            warnings.warn(
+                "Codec should be a string. Eg `h264`, `h264_nvenc`. "
+                "You may used CV2.VideoWriter_fourcc, which will be ignored.",
+                UserWarning,
             )
         elif codec.endswith("_nvenc"):
             codec = codec
@@ -150,7 +184,8 @@ class FFmpegWriterNV(FFmpegWriter):
         vid.preset = preset if preset is not None else ("default" if IN_COLAB else "fast")
         return vid
 
-    def _init_video_stream(self):
+    def _init_video_stream(self) -> None:
+        assert self.resize is not None
         bitrate_str = f"-b:v {self.bitrate} " if self.bitrate else ""
         rtsp_str = f"-f rtsp" if self.filename.startswith("rtsp://") else ""
         filter_str = (

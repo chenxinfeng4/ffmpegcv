@@ -1,15 +1,19 @@
 from multiprocessing import Queue, Process, Array
 import numpy as np
+from typing import Any, Callable, Dict, Tuple
+
 from .ffmpeg_writer import FFmpegWriter
 
 NFRAME = 10
 
 class FFmpegWriterNoblock(FFmpegWriter):
+    q: Queue
+
     def __init__(self,
-                 vwriter_fun,
-                 *vwriter_args, **vwriter_kwargs):
+                 vwriter_fun: Callable[..., FFmpegWriter],
+                 *vwriter_args: Any, **vwriter_kwargs: Any) -> None:
         super().__init__()
-        vid:FFmpegWriter = vwriter_fun(*vwriter_args, **vwriter_kwargs)
+        vid: FFmpegWriter = vwriter_fun(*vwriter_args, **vwriter_kwargs)
         vid.release()
 
         props_name = ['width', 'height', 'fps', 'codec', 'pix_fmt',
@@ -24,7 +28,7 @@ class FFmpegWriterNoblock(FFmpegWriter):
         self.waitInit = True
         self.process = None
 
-    def write(self, img:np.ndarray):
+    def write(self, img: np.ndarray) -> None:
         if self.waitInit:
             if self.size is None:
                 self.size = (img.shape[1], img.shape[0])
@@ -37,6 +41,7 @@ class FFmpegWriterNoblock(FFmpegWriter):
                                 self.vwriter_fun, self.vwriter_args, self.vwriter_kwargs))
             process.start()
             self.process = process
+            assert self.size is not None
             self.width, self.height = self.size
             self.waitInit = False
 
@@ -45,17 +50,24 @@ class FFmpegWriterNoblock(FFmpegWriter):
         self.np_array[data_id] = img
         self.q.put(data_id)
 
-    def _init_share_array(self):
+    def _init_share_array(self) -> None:
         self.shared_array = Array('b', int(NFRAME*np.prod(self.in_numpy_shape)))
         self.np_array = np.frombuffer(self.shared_array.get_obj(), dtype=np.uint8).reshape((NFRAME,*self.in_numpy_shape))
 
-    def release(self):
+    def release(self) -> None:
         if self.process is not None and self.process.is_alive():
             self.q.put(None)
             self.process.join()
 
 
-def child_process(shared_array, q:Queue, in_numpy_shape, vwriter_fun, vwriter_args, vwriter_kwargs):
+def child_process(
+    shared_array: Any,
+    q: Queue,
+    in_numpy_shape: Tuple[int, ...],
+    vwriter_fun: Callable[..., FFmpegWriter],
+    vwriter_args: Tuple[Any, ...],
+    vwriter_kwargs: Dict[str, Any],
+) -> None:
     vid = vwriter_fun(*vwriter_args, **vwriter_kwargs)
     np_array = np.frombuffer(shared_array.get_obj(), dtype=np.uint8).reshape((NFRAME,*in_numpy_shape))
     with vid:

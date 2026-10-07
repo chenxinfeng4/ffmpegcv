@@ -4,7 +4,7 @@ from pycuda.compiler import SourceModule
 from pycuda import gpuarray
 from ffmpegcv.ffmpeg_reader import FFmpegReader, FFmpegReaderNV
 import numpy as np
-from typing import Tuple
+from typing import Any, Dict, Optional, Tuple
 
 
 cuda.init()
@@ -120,7 +120,7 @@ __global__ void NV12_HWC_fp32(unsigned char *NV12, float *RGB24, int *width_, in
 )
 
 
-def load_cuda_module():
+def load_cuda_module() -> Dict[Tuple[str, str], Any]:
     mod = SourceModule(mod_code)
     converter = {('yuv420p', 'chw'): mod.get_function('yuv420p_CHW_fp32'),
                 ('yuv420p', 'hwc'): mod.get_function('yuv420p_HWC_fp32'),
@@ -130,19 +130,19 @@ def load_cuda_module():
 
 
 class Holder(PointerHolderBase):
-    def __init__(self, tensor):
+    def __init__(self, tensor: Any) -> None:
         super().__init__()
         self.tensor = tensor
         self.gpudata = tensor.data_ptr()
 
-    def get_pointer(self):
+    def get_pointer(self) -> int:
         return self.tensor.data_ptr()
 
-    def __index__(self):
+    def __index__(self) -> int:
         return self.gpudata
 
 
-def tensor_to_gpuarray(tensor) -> gpuarray.GPUArray:
+def tensor_to_gpuarray(tensor: Any) -> gpuarray.GPUArray:
     '''Convert a :class:`torch.Tensor` to a :class:`pycuda.gpuarray.GPUArray`. The underlying
     storage will be shared, so that modifications to the array will reflect in the tensor object.
     Parameters
@@ -160,25 +160,25 @@ def tensor_to_gpuarray(tensor) -> gpuarray.GPUArray:
 
 
 class PycudaContext:
-    def __init__(self, gpu=0):
+    def __init__(self, gpu: int = 0) -> None:
         self.ctx = cuda.Device(gpu).make_context()
 
-    def __enter__(self):
+    def __enter__(self) -> "PycudaContext":
         if self.ctx is not None:
             self.ctx.push()
         return self
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(self, *args: Any, **kwargs: Any) -> None:
         if self.ctx is not None:
             self.ctx.pop()
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self.ctx is not None:
             self.ctx.pop()
 
 
 class FFmpegReaderCUDA(FFmpegReader):
-    def __init__(self, vid:FFmpegReader, gpu=0, tensor_format='hwc'):
+    def __init__(self, vid: FFmpegReader, gpu: int = 0, tensor_format: str = 'hwc') -> None:
         assert vid.pix_fmt in ['yuv420p', 'nv12'], 'Set pix_fmt to yuv420p or nv12. Auto convert to rgb in cuda.'
         assert tensor_format in ['hwc', 'chw'], 'tensor_format must be hwc or chw'
         if isinstance(vid, FFmpegReaderNV) and vid.pix_fmt != 'nv12':
@@ -198,13 +198,14 @@ class FFmpegReaderCUDA(FFmpegReader):
         self.out_numpy_shape = (vid.height, vid.width, 3) if tensor_format == 'hwc' else (3, vid.height, vid.width)
         self.torch_device = f'cuda:{gpu}'
         self.block_size = (16, 16, 1)
+        assert self.width is not None and self.height is not None
         self.grid_size = ((self.width + self.block_size[0] - 1) // self.block_size[0],
                           (self.height + self.block_size[1] - 1) // self.block_size[1])
         self.process = None
         with self.ctx:
             self.converter = load_cuda_module()[(vid.pix_fmt, tensor_format)]
 
-    def read(self, out_MAT:gpuarray.GPUArray=None) -> Tuple[bool, gpuarray.GPUArray]:
+    def read(self, out_MAT: Optional[gpuarray.GPUArray] = None) -> Tuple[bool, Optional[gpuarray.GPUArray]]:
         self.waitInit = False
         ret, frame_yuv420p = self.vid.read()
         if not ret:
@@ -218,7 +219,7 @@ class FFmpegReaderCUDA(FFmpegReader):
                         block=self.block_size, grid=self.grid_size)
             return True, out_MAT
     
-    def read_cudamem(self, out_MAT:cuda.DeviceAllocation=None) -> Tuple[bool, cuda.DeviceAllocation]:
+    def read_cudamem(self, out_MAT: Optional[cuda.DeviceAllocation] = None) -> Tuple[bool, Optional[cuda.DeviceAllocation]]:
         self.waitInit = False
         ret, frame_yuv420p = self.vid.read()
         if not ret:
@@ -233,7 +234,7 @@ class FFmpegReaderCUDA(FFmpegReader):
                         block=self.block_size, grid=self.grid_size)
             return True, out_MAT
     
-    def read_torch(self, out_MAT=None):
+    def read_torch(self, out_MAT: Any = None) -> Tuple[bool, Any]:
         import torch
         self.waitInit = False
         ret, frame_yuv420p = self.vid.read()
@@ -249,6 +250,6 @@ class FFmpegReaderCUDA(FFmpegReader):
                         block=self.block_size, grid=self.grid_size)
             return True, out_MAT
 
-    def release(self):
+    def release(self) -> None:
         self.vid.release()
         super().release()

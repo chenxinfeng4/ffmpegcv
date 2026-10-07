@@ -1,10 +1,10 @@
 import subprocess
 from subprocess import Popen, PIPE
 import re
-from collections import namedtuple
 import json
 import shlex
 import platform
+from typing import Any, Dict, NamedTuple, Sequence, Union
 
 scan_the_whole = {"mkv", "flv", "ts"}  # scan the whole file to the count, slow
 
@@ -15,17 +15,26 @@ _num_NVIDIA_GPUs = -1
 _num_QSV_GPUs = -1
 
 
-def get_info(video: str):
+class VideoInfo(NamedTuple):
+    width: int
+    height: int
+    fps: float
+    count: int  # type: ignore[assignment]  # shadows tuple.count
+    codec: str
+    duration: float
+
+
+def get_info(video: str) -> VideoInfo:
     do_scan_the_whole = video.split(".")[-1] in scan_the_whole
 
-    def ffprobe_info_(do_scan_the_whole):
+    def ffprobe_info_(do_scan_the_whole: bool) -> Dict[str, Any]:
         use_count_packets = '-count_packets' if do_scan_the_whole else ''
         cmd = 'ffprobe -v quiet -print_format json=compact=1 -select_streams v:0 {}  -show_streams "{}"'.format(
             use_count_packets, video)
 
         output = subprocess.check_output(shlex.split(cmd), shell=False)
-        data: dict = json.loads(output)
-        vinfo: dict = data['streams'][0]
+        data: Dict[str, Any] = json.loads(output)
+        vinfo: Dict[str, Any] = data['streams'][0]
         return vinfo
 
     vinfo = ffprobe_info_(do_scan_the_whole)
@@ -34,13 +43,7 @@ def get_info(video: str):
         do_scan_the_whole = True
         vinfo = ffprobe_info_(do_scan_the_whole)
 
-    # VideoInfo = namedtuple(
-    #     "VideoInfo", ["width", "height", "fps", "count", "codec", "duration", "pix_fmt"]
-    # )
-    VideoInfo = namedtuple(
-        "VideoInfo", ["width", "height", "fps", "count", "codec", "duration"]
-    )
-    outinfo = dict()
+    outinfo: Dict[str, Any] = dict()
     outinfo["width"] = int(vinfo["width"])
     outinfo["height"] = int(vinfo["height"])
     outinfo["fps"] = eval(vinfo["r_frame_rate"])
@@ -60,7 +63,7 @@ def get_info(video: str):
     return videoinfo
 
 
-def get_info_precise(video: str):
+def get_info_precise(video: str) -> VideoInfo:
     videoinfo = get_info(video)
     cmd = (
         "ffprobe -v error -select_streams v:0 -show_entries frame=pts_time "
@@ -69,9 +72,9 @@ def get_info_precise(video: str):
     output = subprocess.check_output(
         shlex.split(cmd), shell=False, stderr=subprocess.DEVNULL
     )
-    pts_start, *_, pts_end = output.decode().split()
-    pts_start, pts_end = float(pts_start), float(pts_end)
-    videoinfod = videoinfo._asdict()
+    first_pts, *_, last_pts = output.decode().split()
+    pts_start, pts_end = float(first_pts), float(last_pts)
+    videoinfod: Dict[str, Any] = videoinfo._asdict()
     duration_ = pts_end - pts_start
     videoinfod["fps"] = round((videoinfo.count - 1) / duration_, 3)
     videoinfod["duration"] = round(duration_ + 1 / videoinfod["fps"], 3)
@@ -79,12 +82,13 @@ def get_info_precise(video: str):
     return videoinfo_precise
 
 
-def get_num_NVIDIA_GPUs():
+def get_num_NVIDIA_GPUs() -> int:
     global _num_NVIDIA_GPUs, _inited_get_num_NVIDIA_GPUs
     if not _inited_get_num_NVIDIA_GPUs:
         cmd = "ffmpeg -f lavfi -i nullsrc -c:v h264_nvenc -gpu list -f null -"
         p = Popen(cmd.split(), shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate(b"")
+        assert p.stdin is not None and p.stdout is not None
         p.stdin.close()
         p.stdout.close()
         p.terminate()
@@ -95,18 +99,21 @@ def get_num_NVIDIA_GPUs():
     return _num_NVIDIA_GPUs
 
 
-def get_num_QSV_GPUs():
+def get_num_QSV_GPUs() -> int:
     global _num_QSV_GPUs, _inited_get_num_QSV_GPUs
     if not _inited_get_num_QSV_GPUs:
         cmd = "ffmpeg -hide_banner -f qsv -h encoder=h264_qsv"
         p = Popen(cmd.split(), shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate(b"")
-        _num_QSV_GPUs = 1 if len(stdout) > 50 else 0
+        out = stdout.decode("utf-8", "ignore")
+        # ffmpeg >= 6 prints "Codec 'h264_qsv' is not recognized by FFmpeg." (exit 0),
+        # which used to be mistaken for a working encoder by a length check.
+        _num_QSV_GPUs = 1 if "AVOptions" in out and "not recognized" not in out else 0
         _inited_get_num_QSV_GPUs = True
     return _num_QSV_GPUs
 
 
-def encoder_to_nvidia(codec):
+def encoder_to_nvidia(codec: str) -> str:
     codec_map = {"h264": "h264_nvenc", "hevc": "hevc_nvenc"}
 
     if codec in codec_map:
@@ -117,7 +124,7 @@ def encoder_to_nvidia(codec):
         raise Exception("No NV codec found for %s" % codec)
 
 
-def encoder_to_qsv(codec):
+def encoder_to_qsv(codec: str) -> str:
     codec_map = {
         "h264": "h264_qsv",
         "hevc": "hevc_qsv",
@@ -134,7 +141,7 @@ def encoder_to_qsv(codec):
         raise Exception("No QSV codec found for %s" % codec)
 
 
-def decoder_to_nvidia(codec):
+def decoder_to_nvidia(codec: str) -> str:
     codec_map = {
         "av1": "av1_cuvid",
         "h264": "h264_cuvid",
@@ -159,7 +166,7 @@ def decoder_to_nvidia(codec):
         raise Exception("No NV codec found for %s" % codec)
 
 
-def decoder_to_qsv(codec):
+def decoder_to_qsv(codec: str) -> str:
     codec_map = {
         "av1": "av1_qsv",
         "h264": "h264_qsv",
@@ -179,7 +186,7 @@ def decoder_to_qsv(codec):
         raise Exception("No QSV codec found for %s" % codec)
 
 
-def run_async(args):
+def run_async(args: Union[str, Sequence[str]]) -> Popen:
     bufsize = -1
     if isinstance(args, str):
         args = shlex.split(args)
@@ -192,7 +199,7 @@ def run_async(args):
         bufsize=bufsize,
     )
 
-def run_async_reader(args):
+def run_async_reader(args: Union[str, Sequence[str]]) -> Popen:
     bufsize = -1
     if isinstance(args, str):
         args = shlex.split(args)
@@ -207,7 +214,7 @@ def run_async_reader(args):
     )
 
 
-def release_process(process: Popen, forcekill=False):
+def release_process(process: Any, forcekill: bool = False) -> None:
     if hasattr(process, "stdin") and process.stdin is not None:
         process.stdin.close()
     if hasattr(process, "stdout") and process.stdout is not None:
@@ -220,7 +227,7 @@ def release_process(process: Popen, forcekill=False):
         process.wait()
 
 
-def release_process_writer(process: Popen):
+def release_process_writer(process: Any) -> None:
     if hasattr(process, "stdin"):
         process.stdin.close()
     if hasattr(process, "stdout"):

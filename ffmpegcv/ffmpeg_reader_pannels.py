@@ -1,5 +1,7 @@
 import os
 import numpy as np
+from typing import Any, List, Optional, Sequence, Tuple, Union
+
 from ffmpegcv.ffmpeg_reader import FFmpegReader, get_outnumpyshape
 
 from ffmpegcv.video_info import (
@@ -9,21 +11,30 @@ from ffmpegcv.video_info import (
 
 
 class FFmpegReaderPannels(FFmpegReader):
+    # Attributes initialized by the `VideoReader` factory method.
+    crop_xywh_l: Any
+    crop_width_l: Any
+    crop_height_l: Any
+    size_l: Any
+    npannel: int
+    out_numpy_shape_l: List[Any]
+    is_pannel_similar: bool
+
     @staticmethod
-    def VideoReader(
-        filename:str,
-        crop_xywh_l:list,
-        codec,
-        pix_fmt='bgr24',
-        resize=None
-    ):
+    def VideoReader(  # type: ignore[override]
+        filename: str,
+        crop_xywh_l: List[Sequence[int]],
+        codec: Optional[str],
+        pix_fmt: str = 'bgr24',
+        resize: Optional[Sequence[int]] = None
+    ) -> "FFmpegReaderPannels":
         assert os.path.exists(filename) and os.path.isfile(
             filename
         ), f"{filename} not exists"
         assert pix_fmt in ["rgb24", "bgr24", "yuv420p", "nv12", "gray"]
         vid = FFmpegReaderPannels()
-        crop_xywh_l = np.array(crop_xywh_l)
-        vid.crop_xywh_l = crop_xywh_l
+        crop_xywh_arr = np.array(crop_xywh_l)
+        vid.crop_xywh_l = crop_xywh_arr
         videoinfo = get_info(filename)
         vid.origin_width = videoinfo.width
         vid.origin_height = videoinfo.height
@@ -33,9 +44,9 @@ class FFmpegReaderPannels(FFmpegReader):
         vid.pix_fmt = pix_fmt
         vid.codec = codec if codec else videoinfo.codec
 
-        vid.crop_width_l = crop_xywh_l[:,2]
-        vid.crop_height_l = crop_xywh_l[:,3]
-        vid.size_l = crop_xywh_l[:,2:][:,::-1]
+        vid.crop_width_l = crop_xywh_arr[:,2]
+        vid.crop_height_l = crop_xywh_arr[:,3]
+        vid.size_l = crop_xywh_arr[:,2:][:,::-1]
         vid.npannel = len(crop_xywh_l)
         vid.out_numpy_shape_l = [get_outnumpyshape(s[::-1], pix_fmt) for s in vid.size_l]
         if len(set(vid.crop_width_l)) == len(set(vid.crop_height_l)) == 1:
@@ -47,7 +58,8 @@ class FFmpegReaderPannels(FFmpegReader):
         else:
             vid.is_pannel_similar = False
             vid.crop_width = vid.crop_height = vid.size = None
-            vid.out_numpy_shape = (np.sum(np.prod(s) for s in vid.out_numpy_shape_l),)
+            # Note: np.sum(generator) was removed in NumPy 2.5; use the builtin.
+            vid.out_numpy_shape = (int(sum(int(np.prod(s)) for s in vid.out_numpy_shape_l)),)
 
         VINSRCs =''.join(f'[VSRC{i}]' for i in range(vid.npannel))
         pix_fmtopt = ',extractplanes=y' if pix_fmt=='gray' else ''
@@ -64,11 +76,14 @@ class FFmpegReaderPannels(FFmpegReader):
         )
         return vid
     
-    def read(self):
+    def read(self) -> Tuple[bool, Optional[Union[np.ndarray, List[np.ndarray]]]]:
         if self.waitInit:
             self.process = run_async(self.ffmpeg_cmd)
             self.waitInit = False
-            
+
+        if not self._isopen:
+            return False, None
+
         in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
         if not in_bytes:
             self.release()

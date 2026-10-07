@@ -1,4 +1,6 @@
 import warnings
+from typing import Optional, Sequence
+
 from ffmpegcv.ffmpeg_writer import FFmpegWriter
 from .video_info import (
     run_async,
@@ -8,8 +10,19 @@ from .video_info import (
 
 
 class FFmpegWriterQSV(FFmpegWriter):
+    gpu: int
+
     @staticmethod
-    def VideoWriter(filename, codec, fps, pix_fmt, gpu, bitrate=None, resize=None, preset=None):
+    def VideoWriter(  # type: ignore[override]
+        filename: str,
+        codec: Optional[str],
+        fps: float,
+        pix_fmt: str,
+        gpu: Optional[int],
+        bitrate: Optional[str] = None,
+        resize: Optional[Sequence[int]] = None,
+        preset: Optional[str] = None
+    ) -> "FFmpegWriterQSV":
         assert gpu is None or gpu == 0, 'Cannot use multiple QSV gpu yet.'
         numGPU = get_num_QSV_GPUs()
         assert numGPU
@@ -18,11 +31,10 @@ class FFmpegWriterQSV(FFmpegWriter):
             codec = "hevc_qsv"
         elif not isinstance(codec, str):
             codec = "hevc_qsv"
-            warnings.simplefilter(
-                """
-                Codec should be a string. Eg `h264`, `hevc`. 
-                You may used CV2.VideoWriter_fourcc, which will be ignored.
-                """
+            warnings.warn(
+                "Codec should be a string. Eg `h264`, `hevc`. "
+                "You may used CV2.VideoWriter_fourcc, which will be ignored.",
+                UserWarning,
             )
         else:
             codec = decoder_to_qsv(codec)

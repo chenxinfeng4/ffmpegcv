@@ -11,11 +11,12 @@ from .ffmpeg_noblock import noblock, ReadLiveLast
 from .video_info import get_num_NVIDIA_GPUs
 import shutil
 from subprocess import DEVNULL, check_output
+from typing import List as _List, Optional as _Optional, Sequence as _Sequence, Union as _Union
 
 from .version import __version__
 
 
-def _check():
+def _check() -> None:
     if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
         raise RuntimeError(
             "The ffmpeg is not installed. \n\n"
@@ -26,10 +27,10 @@ def _check():
 
 _check()
 
-_check_nvidia_init = None
+_check_nvidia_init: _Optional[bool] = None
 
 
-def _check_nvidia():
+def _check_nvidia() -> bool:
     global _check_nvidia_init
     run = lambda x: check_output(x, shell=True, stderr=DEVNULL)
     if _check_nvidia_init is None:
@@ -62,14 +63,14 @@ def _check_nvidia():
 
 
 def VideoCapture(
-    file,
-    codec=None,
-    pix_fmt="bgr24",
-    crop_xywh=None,
-    resize=None,
-    resize_keepratio=True,
-    resize_keepratioalign="center",
-    infile_options=None
+    file: str,
+    codec: _Optional[str] = None,
+    pix_fmt: str = "bgr24",
+    crop_xywh: _Optional[_Sequence[int]] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    resize_keepratio: bool = True,
+    resize_keepratioalign: _Optional[str] = "center",
+    infile_options: _Optional[str] = None
 ) -> FFmpegReader:
     """
     Alternative to cv2.VideoCapture
@@ -165,7 +166,13 @@ VideoReader = VideoCapture
 
 
 def VideoWriter(
-    file, codec=None, fps=30, pix_fmt="bgr24", bitrate=None, resize=None, preset=None
+    file: str,
+    codec: _Optional[str] = None,
+    fps: float = 30,
+    pix_fmt: str = "bgr24",
+    bitrate: _Optional[str] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    preset: _Optional[str] = None
 ) -> FFmpegWriter:
     """
     Alternative to cv2.VideoWriter
@@ -232,14 +239,14 @@ def VideoWriter(
 
 
 def VideoCaptureNV(
-    file,
-    pix_fmt="bgr24",
-    crop_xywh=None,
-    resize=None,
-    resize_keepratio=True,
-    resize_keepratioalign="center",
-    infile_options=None,
-    gpu=0
+    file: str,
+    pix_fmt: str = "bgr24",
+    crop_xywh: _Optional[_Sequence[int]] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    resize_keepratio: bool = True,
+    resize_keepratioalign: _Optional[str] = "center",
+    infile_options: _Optional[str] = None,
+    gpu: _Optional[int] = 0
 ) -> FFmpegReaderNV:
     """
     `ffmpegcv.VideoCaptureNV` is a gpu version for `ffmpegcv.VideoCapture`.
@@ -255,14 +262,14 @@ VideoReaderNV = VideoCaptureNV
 
 
 def VideoCaptureQSV(
-    file,
-    pix_fmt="bgr24",
-    crop_xywh=None,
-    resize=None,
-    resize_keepratio=True,
-    resize_keepratioalign="center",
-    infile_options=None,
-    gpu=0
+    file: str,
+    pix_fmt: str = "bgr24",
+    crop_xywh: _Optional[_Sequence[int]] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    resize_keepratio: bool = True,
+    resize_keepratioalign: _Optional[str] = "center",
+    infile_options: _Optional[str] = None,
+    gpu: _Optional[int] = 0
 ) -> FFmpegReaderQSV:
     """
     `ffmpegcv.VideoCaptureQSV` is a gpu version for `ffmpegcv.VideoCapture`.
@@ -277,14 +284,14 @@ VideoReaderQSV = VideoCaptureQSV
 
 
 def VideoWriterNV(
-    file,
-    codec=None,
-    fps=30,
-    pix_fmt="bgr24",
-    gpu=0,
-    bitrate=None,
-    resize=None,
-    preset=None,
+    file: str,
+    codec: _Optional[str] = None,
+    fps: float = 30,
+    pix_fmt: str = "bgr24",
+    gpu: _Optional[int] = 0,
+    bitrate: _Optional[str] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    preset: _Optional[str] = None,
 ) -> FFmpegWriterNV:
     """
     `ffmpegcv.VideoWriterNV` is a gpu version for `ffmpegcv.VideoWriter`.
@@ -296,14 +303,14 @@ def VideoWriterNV(
 
 
 def VideoWriterQSV(
-    file,
-    codec=None,
-    fps=30,
-    pix_fmt="bgr24",
-    gpu=0,
-    bitrate=None,
-    resize=None,
-    preset=None,
+    file: str,
+    codec: _Optional[str] = None,
+    fps: float = 30,
+    pix_fmt: str = "bgr24",
+    gpu: _Optional[int] = 0,
+    bitrate: _Optional[str] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    preset: _Optional[str] = None,
 ) -> FFmpegWriterQSV:
     """
     `ffmpegcv.VideoWriterQSV` is a gpu version for `ffmpegcv.VideoWriter`.
@@ -314,7 +321,11 @@ def VideoWriterQSV(
 
 
 def VideoWriterStreamRT(
-    url, pix_fmt="bgr24", bitrate=None, resize=None, preset=None
+    url: str,
+    pix_fmt: str = "bgr24",
+    bitrate: _Optional[str] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    preset: _Optional[str] = None
 ) -> FFmpegWriterStreamRT:
     return FFmpegWriterStreamRT.VideoWriter(
         url, "libx264", pix_fmt, bitrate, resize, preset
@@ -322,16 +333,16 @@ def VideoWriterStreamRT(
 
 
 def VideoCaptureCAM(
-    camname,
-    pix_fmt="bgr24",
-    crop_xywh=None,
-    resize=None,
-    resize_keepratio=True,
-    resize_keepratioalign="center",
-    camsize_wh=None,
-    camfps=None,
-    camcodec=None,
-    campix_fmt=None
+    camname: _Union[int, str],
+    pix_fmt: str = "bgr24",
+    crop_xywh: _Optional[_Sequence[int]] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    resize_keepratio: bool = True,
+    resize_keepratioalign: _Optional[str] = "center",
+    camsize_wh: _Optional[_Sequence[int]] = None,
+    camfps: _Optional[float] = None,
+    camcodec: _Optional[str] = None,
+    campix_fmt: _Optional[str] = None
 ) -> FFmpegReaderCAM:
     """
     Alternative to cv2.VideoCapture
@@ -416,15 +427,15 @@ VideoReaderCAM = VideoCaptureCAM
 
 
 def VideoCaptureStream(
-    stream_url,
-    codec=None,
-    pix_fmt="bgr24",
-    crop_xywh=None,
-    resize=None,
-    resize_keepratio=True,
-    resize_keepratioalign="center",
-    infile_options=None,
-    timeout=None
+    stream_url: str,
+    codec: _Optional[str] = None,
+    pix_fmt: str = "bgr24",
+    crop_xywh: _Optional[_Sequence[int]] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    resize_keepratio: bool = True,
+    resize_keepratioalign: _Optional[str] = "center",
+    infile_options: _Optional[str] = None,
+    timeout: _Optional[float] = None
 ) -> FFmpegReaderStream:
     """
     Alternative to cv2.VideoCapture
@@ -488,17 +499,17 @@ VideoReaderStream = VideoCaptureStream
 
 
 def VideoCaptureStreamRT(
-    stream_url,
-    codec=None,
-    pix_fmt="bgr24",
-    crop_xywh=None,
-    resize=None,
-    resize_keepratio=True,
-    resize_keepratioalign="center",
-    infile_options=None,
-    gpu=None,
-    timeout=None,
-) -> FFmpegReaderStreamRT:
+    stream_url: str,
+    codec: _Optional[str] = None,
+    pix_fmt: str = "bgr24",
+    crop_xywh: _Optional[_Sequence[int]] = None,
+    resize: _Optional[_Sequence[int]] = None,
+    resize_keepratio: bool = True,
+    resize_keepratioalign: _Optional[str] = "center",
+    infile_options: _Optional[str] = None,
+    gpu: _Optional[int] = None,
+    timeout: _Optional[float] = None,
+) -> _Union[FFmpegReaderStreamRT, FFmpegReaderStreamRTNV]:
     if gpu is None:
         return FFmpegReaderStreamRT.VideoReader(
             stream_url,
@@ -530,8 +541,12 @@ VideoReaderStreamRT = VideoCaptureStreamRT
 
 
 def VideoCapturePannels(
-    file: str, crop_xywh_l: list, codec=None, pix_fmt="bgr24", resize=None
-):
+    file: str,
+    crop_xywh_l: _List[_Sequence[int]],
+    codec: _Optional[str] = None,
+    pix_fmt: str = "bgr24",
+    resize: _Optional[_Sequence[int]] = None
+) -> FFmpegReaderPannels:
     """
     Alternative to cv2.VideoCapture
 

@@ -7,14 +7,17 @@ from threading import Thread
 from queue import Queue
 import sys
 import os
+from types import TracebackType
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+
 from ffmpegcv.ffmpeg_reader import get_videofilter_cpu, get_outnumpyshape
 
 
 class platform:
-    win = 0
-    linux = 1
-    mac = 2
-    other = 3
+    win: int = 0
+    linux: int = 1
+    mac: int = 2
+    other: int = 3
 
 
 if sys.platform.startswith("linux"):
@@ -27,7 +30,7 @@ else:
     this_os = platform.other
 
 
-def _query_camera_divices_mac() -> dict:
+def _query_camera_divices_mac() -> Dict[int, Tuple[str, int]]:
     # run the command 'ffmpeg -f avfoundation -list_devices true -i "" '
     command = 'ffmpeg -hide_banner -f avfoundation -list_devices true -i ""'
     process = subprocess.Popen(
@@ -41,13 +44,17 @@ def _query_camera_divices_mac() -> dict:
     device_id_pattern = re.compile(r"\[[^\]]*?\] \[(\d*)\]")
     device_name_pattern = re.compile(r".*\] (.*)")
     for line in lines[1:-1]:
-        device_id = int(re.search(device_id_pattern, line).group(1))
-        device_name = re.search(device_name_pattern, line).group(1)
+        id_match = re.search(device_id_pattern, line)
+        name_match = re.search(device_name_pattern, line)
+        if id_match is None or name_match is None:
+            continue
+        device_id = int(id_match.group(1))
+        device_name = name_match.group(1)
         id_device_map[device_id] = (device_name, device_id)
     return id_device_map
 
 
-def _query_camera_divices_win() -> dict:
+def _query_camera_divices_win() -> Dict[int, Tuple[str, str]]:
     command = "ffmpeg -hide_banner -list_devices true -f dshow -i dummy"
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
@@ -66,10 +73,10 @@ def _query_camera_divices_win() -> dict:
     return id_device_map
 
 
-def _query_camera_divices_linux() -> dict:
+def _query_camera_divices_linux() -> Dict[int, Tuple[str, str]]:
     "edit from https://github.com/p513817/python-get-cam-name/blob/master/get_cam_name.py"
     root = "/sys/class/video4linux"
-    cam_info = []
+    cam_info: List[Tuple[str, str]] = []
 
     for index in sorted([file for file in os.listdir(root)]):
         # Get Camera Name From /sys/class/video4linux/<video*>/name
@@ -91,22 +98,24 @@ def _query_camera_divices_linux() -> dict:
     return id_device_map
 
 
-def query_camera_devices(verbose_dict: bool = False) -> dict:
-    result = {
-        platform.linux: _query_camera_divices_linux,
-        platform.mac: _query_camera_divices_mac,
-        platform.win: _query_camera_divices_win,
-    }[this_os]()
+def query_camera_devices(verbose_dict: bool = False) -> Dict[Any, Any]:
+    result: Dict[Any, Any]
+    if this_os == platform.linux:
+        result = _query_camera_divices_linux()
+    elif this_os == platform.mac:
+        result = _query_camera_divices_mac()
+    else:
+        result = _query_camera_divices_win()
     if verbose_dict:
         dict_by_v0 = {v[0]: v for v in result.values()}
         dict_by_v1 = {v[1]: v for v in result.values()}
-        result.update(dict_by_v0)
-        result.update(dict_by_v1)
+        result.update(dict_by_v0)  # type: ignore[arg-type]
+        result.update(dict_by_v1)  # type: ignore[arg-type]
 
     return result
 
 
-def _query_camera_options_mac(cam_id_name) -> str:
+def _query_camera_options_mac(cam_id_name: Any) -> List[Dict[str, Any]]:
     print(
         "\033[33m"
         + "FFmpeg& FFmpegcv CAN NOT query the camera options in MAC platform."
@@ -116,7 +125,7 @@ def _query_camera_options_mac(cam_id_name) -> str:
     return [{"camsize_wh": None, "camfps": None}]
 
 
-def _query_camera_options_linux(cam_id_name) -> str:
+def _query_camera_options_linux(cam_id_name: Any) -> List[Dict[str, Any]]:
     print(
         "\033[33m"
         + "FFmpeg& FFmpegcv CAN NOT query the camera FPS in Linux platform."
@@ -155,7 +164,7 @@ def _query_camera_options_linux(cam_id_name) -> str:
     return outlist
 
 
-def _query_camera_options_win(cam_id_name) -> str:
+def _query_camera_options_win(cam_id_name: Union[int, str]) -> List[Dict[str, Any]]:
     if isinstance(cam_id_name, int):
         id_device_map = query_camera_devices()
         camname = id_device_map[cam_id_name][1]
@@ -175,14 +184,14 @@ def _query_camera_options_win(cam_id_name) -> str:
     for text in unique_dshowlist:
         cam_options = dict()
         cam_options["camcodec"] = (
-            re.search(r"vcodec=(\w+)", text).group(1) if "vcodec" in text else None
+            re.search(r"vcodec=(\w+)", text).group(1) if "vcodec" in text else None  # type: ignore[union-attr]
         )
         cam_options["campix_fmt"] = (
-            re.search(r"pixel_format=(\w+)", text).group(1)
+            re.search(r"pixel_format=(\w+)", text).group(1)  # type: ignore[union-attr]
             if "pixel_format" in text
             else None
         )
-        camsize_wh = re.search(r"min s=(\w+)", text).group(1)
+        camsize_wh = re.search(r"min s=(\w+)", text).group(1)  # type: ignore[union-attr]
         cam_options["camsize_wh"] = tuple(int(v) for v in camsize_wh.split("x"))
         camfps = float(re.findall(r"fps=([\d.]+)", text)[-1])
         cam_options["camfps"] = int(camfps) if int(camfps) == camfps else camfps
@@ -190,7 +199,7 @@ def _query_camera_options_win(cam_id_name) -> str:
     return outlist
 
 
-def query_camera_options(cam_id_name) -> str:
+def query_camera_options(cam_id_name: Any) -> List[Dict[str, Any]]:
     return {
         platform.linux: _query_camera_options_linux,
         platform.mac: _query_camera_options_mac,
@@ -199,12 +208,12 @@ def query_camera_options(cam_id_name) -> str:
 
 
 class ProducerThread(Thread):
-    def __init__(self, vid, q):
+    def __init__(self, vid: "FFmpegReaderCAM", q: Queue) -> None:
         super(ProducerThread, self).__init__()
         self.vid = vid
         self.q = q
 
-    def run(self):
+    def run(self) -> None:
         q = self.q
         while True:
             if not self.vid.isOpened():
@@ -217,24 +226,49 @@ class ProducerThread(Thread):
 
 
 class FFmpegReaderCAM:
-    def __init__(self):
-        self.iframe = -1
-        self._isopen = True
+    # Attributes initialized by the `VideoReader` factory methods.
+    camname: Optional[str]
+    camid: Optional[int]
+    origin_width: int
+    origin_height: int
+    width: int
+    height: int
+    camfps: Optional[float]
+    camcodec: Optional[str]
+    campix_fmt: Optional[str]
+    pix_fmt: str
+    crop_width: Any
+    crop_height: Any
+    size: Any
+    out_numpy_shape: Any
+    ffmpeg_cmd: str
+    process: Any
+    step: int
+    q: Queue
 
-    def __repr__(self):
+    def __init__(self) -> None:
+        self.iframe: int = -1
+        self._isopen: bool = True
+
+    def __repr__(self) -> str:
         props = pprint.pformat(self.__dict__).replace("{", " ").replace("}", " ")
         return f"{self.__class__}\n" + props
 
-    def __enter__(self):
+    def __enter__(self) -> "FFmpegReaderCAM":
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         self.release()
 
-    def __iter__(self):
+    def __iter__(self) -> "FFmpegReaderCAM":
         return self
 
-    def __next__(self):
+    def __next__(self) -> np.ndarray:
         ret, img = self.read()
         if ret:
             return img
@@ -243,18 +277,18 @@ class FFmpegReaderCAM:
 
     @staticmethod
     def VideoReader(
-        cam_id_name,
-        pix_fmt,
-        crop_xywh,
-        resize,
-        resize_keepratio,
-        resize_keepratioalign,
-        camsize_wh=None,
-        camfps=None,
-        camcodec=None,
-        campix_fmt=None,
-        step=1,
-    ):
+        cam_id_name: Union[int, str],
+        pix_fmt: str,
+        crop_xywh: Optional[Sequence[int]],
+        resize: Optional[Sequence[int]],
+        resize_keepratio: bool,
+        resize_keepratioalign: Optional[str],
+        camsize_wh: Optional[Sequence[int]] = None,
+        camfps: Optional[float] = None,
+        camcodec: Optional[str] = None,
+        campix_fmt: Optional[str] = None,
+        step: int = 1,
+    ) -> "FFmpegReaderCAM":
         vid = FFmpegReaderCAM()
         if this_os == platform.mac:
             # use cam_id as the device marker
@@ -346,7 +380,7 @@ class FFmpegReaderCAM:
         producer.start()
         return vid
 
-    def read_(self):
+    def read_(self) -> Tuple[bool, Optional[np.ndarray]]:
         for i in range(self.step):
             in_bytes = self.process.stdout.read(np.prod(self.out_numpy_shape))
         if not in_bytes:
@@ -358,16 +392,19 @@ class FFmpegReaderCAM:
         img = np.frombuffer(in_bytes, np.uint8).reshape(self.out_numpy_shape)
         return True, img
 
-    def read(self):
+    def read(self) -> Tuple[bool, Optional[np.ndarray]]:
+        # the producer thread buffers frames; drain them even after EOF/release
+        if not self._isopen and self.q.empty():
+            return False, None
         ret, img = self.q.get()
         return ret, img
 
-    def isOpened(self):
+    def isOpened(self) -> bool:
         return self._isopen
     
-    def release(self):
+    def release(self) -> None:
         self._isopen = False
         release_process(self.process)
 
-    def close(self):
+    def close(self) -> None:
         return self.release()

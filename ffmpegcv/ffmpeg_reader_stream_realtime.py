@@ -1,3 +1,5 @@
+from typing import Optional, Sequence
+
 from ffmpegcv.ffmpeg_reader import (
     FFmpegReader,
     get_videofilter_cpu,
@@ -10,21 +12,21 @@ from ffmpegcv.stream_info import get_info
 
 
 class FFmpegReaderStreamRT(FFmpegReader):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
-    def VideoReader(
-        stream_url,
-        codec,
-        pix_fmt,
-        crop_xywh,
-        resize,
-        resize_keepratio,
-        resize_keepratioalign,
-        infile_options,
-        timeout,
-    ):
+    def VideoReader(  # type: ignore[override]
+        stream_url: str,
+        codec: Optional[str],
+        pix_fmt: str,
+        crop_xywh: Optional[Sequence[int]],
+        resize: Optional[Sequence[int]],
+        resize_keepratio: bool,
+        resize_keepratioalign: Optional[str],
+        infile_options: Optional[str],
+        timeout: Optional[float],
+    ) -> "FFmpegReaderStreamRT":
         vid = FFmpegReaderStreamRT()
         videoinfo = get_info(stream_url, timeout)
         vid.origin_width = videoinfo.width
@@ -66,22 +68,24 @@ class FFmpegReaderStreamRT(FFmpegReader):
 
 
 class FFmpegReaderStreamRTNV(FFmpegReader):
-    def __init__(self):
+    codecNV: str
+
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
-    def VideoReader(
-        stream_url,
-        codec,
-        pix_fmt,
-        crop_xywh,
-        resize,
-        resize_keepratio,
-        resize_keepratioalign,
-        infile_options,
-        gpu,
-        timeout,
-    ):
+    def VideoReader(  # type: ignore[override]
+        stream_url: str,
+        codec: Optional[str],
+        pix_fmt: str,
+        crop_xywh: Optional[Sequence[int]],
+        resize: Optional[Sequence[int]],
+        resize_keepratio: bool,
+        resize_keepratioalign: Optional[str],
+        infile_options: Optional[str],
+        gpu: Optional[int],
+        timeout: Optional[float],
+    ) -> "FFmpegReaderStreamRTNV":
         vid = FFmpegReaderStreamRTNV()
         videoinfo = get_info(stream_url, timeout)
         vid.origin_width = videoinfo.width

@@ -54,6 +54,40 @@ You need to download ffmpeg before you can use ffmpegcv.
  pip install ffmpegcv[cuda]
 ```
 
+## Use ffmpegcv with an AI agent
+
+This repository ships documentation written for AI coding agents, so tools like
+Claude Code, Cursor, Codex, Gemini CLI or GitHub Copilot can use the library correctly
+without guessing the API.
+
+| File | Purpose |
+| ---- | ------- |
+| [`AGENTS.md`](./AGENTS.md) | Agent entry point: hard rules, task recipes, public API map, repo layout, definition of done. |
+| [`docs/agents/quickstart.md`](./docs/agents/quickstart.md) | Copy-paste recipes: read/write, ROI, GPU, CUDA, camera, RTSP, noblock. |
+| [`docs/agents/api-reference.md`](./docs/agents/api-reference.md) | Exact signatures, defaults, pixel-format/shape table. |
+| [`docs/agents/architecture.md`](./docs/agents/architecture.md) | Module map, ffmpeg command templates, process/thread model. |
+| [`docs/agents/troubleshooting.md`](./docs/agents/troubleshooting.md) | Error → cause → fix. |
+| [`docs/agents/testing.md`](./docs/agents/testing.md) | How to run and extend the compatibility suite. |
+| [`llms.txt`](./llms.txt) | Machine-readable index of the docs for LLM crawlers. |
+
+**How to use it.** Open your project (or this repository) in an agent that reads
+`AGENTS.md` automatically, then describe the task in plain language. A good starter
+prompt:
+
+> Read `AGENTS.md`, then write a script that reads `input.mp4` as RGB frames at 640×480
+> with the aspect ratio preserved, runs a model on each frame, and writes the annotated
+> result to `output.mp4` with H.264. Verify it with the test suite in `docs/agents/testing.md`.
+
+Useful follow-ups:
+
+- "Use `VideoCaptureNV` if a NVIDIA GPU is available, otherwise fall back to `VideoCapture`."
+- "Run the compatibility suite and show me `failed_expectations`."
+- "Wrap the read loop with `ffmpegcv.noblock` so inference overlaps with decoding."
+
+**Key rules the agent will follow** (details in [`AGENTS.md`](./AGENTS.md)):
+`ffmpeg` and `ffprobe` must be on `PATH`; always `release()` a reader/writer (use `with`);
+frames are read-only numpy views, so `copy()` before mutating; resize sizes must be even.
+
 ## When should choose `ffmpegcv` other than `opencv`:
 - The `opencv` is hard to install. The ffmpegcv only requires `numpy` and `FFmpeg`, works across Mac/Windows/Linux platforms.
 - The `opencv` packages too much image processing toolbox. You just want a simple video/camero IO with GPU accessible.

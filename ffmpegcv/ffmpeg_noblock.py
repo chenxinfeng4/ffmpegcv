@@ -1,18 +1,18 @@
 from .ffmpeg_reader_noblock import FFmpegReaderNoblock
 from .ffmpeg_writer_noblock import FFmpegWriterNoblock
-from typing import Callable
+from typing import Any, Callable, Tuple, Union
 import ffmpegcv
 import threading
 import numpy as np
 import queue
 
 
-def noblock(fun:Callable, *v_args, **v_kargs):
+def noblock(fun: Callable[..., Any], *v_args: Any, **v_kargs: Any) -> Union[FFmpegReaderNoblock, FFmpegWriterNoblock]:
     readerfuns = (ffmpegcv.VideoCapture, ffmpegcv.VideoCaptureNV)
     writerfuns = (ffmpegcv.VideoWriter, ffmpegcv.VideoWriterNV)
 
     if fun in readerfuns:
-        proxyfun = FFmpegReaderNoblock(fun, *v_args, **v_kargs)
+        proxyfun: Union[FFmpegReaderNoblock, FFmpegWriterNoblock] = FFmpegReaderNoblock(fun, *v_args, **v_kargs)
     elif fun in writerfuns:
         proxyfun = FFmpegWriterNoblock(fun, *v_args, **v_kargs)
     else:
@@ -22,7 +22,9 @@ def noblock(fun:Callable, *v_args, **v_kargs):
 
 
 class ReadLiveLast(threading.Thread, ffmpegcv.FFmpegReader):
-    def __init__(self, fun, *args, **kvargs):
+    _q: "queue.Queue"
+
+    def __init__(self, fun: Callable[..., ffmpegcv.FFmpegReader], *args: Any, **kvargs: Any) -> None:
         threading.Thread.__init__(self)
         ffmpegcv.FFmpegReader.__init__(self)
         self.vid = vid = fun(*args, **kvargs)
@@ -39,18 +41,18 @@ class ReadLiveLast(threading.Thread, ffmpegcv.FFmpegReader):
         self._lock = threading.Lock()
         self.start()
 
-    def read(self):
+    def read(self) -> Tuple[bool, np.ndarray]:
         if self.ret:
             self._q.get()  # if reading too freq, then wait until new frame
             self.iframe += 1
         return self.ret, self.img
     
-    def release(self):
+    def release(self) -> None:
         with self._lock:
             self._isopen = False
             self.vid.release()
 
-    def run(self):
+    def run(self) -> None:
         while True:
             with self._lock:
                 if self._isopen:

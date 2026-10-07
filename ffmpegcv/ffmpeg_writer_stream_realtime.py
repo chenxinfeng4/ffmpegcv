@@ -1,12 +1,19 @@
+from typing import Optional, Sequence
+
 from .video_info import run_async
 from ffmpegcv.ffmpeg_writer import FFmpegWriter
 
 
 class FFmpegWriterStreamRT(FFmpegWriter):
     @staticmethod
-    def VideoWriter(
-        filename: str, codec, pix_fmt, bitrate=None, resize=None, preset=None
-    ) -> FFmpegWriter:
+    def VideoWriter(  # type: ignore[override]
+        filename: str,
+        codec: str,
+        pix_fmt: str,
+        bitrate: Optional[str] = None,
+        resize: Optional[Sequence[int]] = None,
+        preset: Optional[str] = None
+    ) -> "FFmpegWriterStreamRT":
         assert codec in ["h264", "libx264", "x264", "mpeg4"]
         assert pix_fmt in ["bgr24", "rgb24", "gray"]
         # assert filename.startswith('rtmp://'), 'currently only support rtmp'
@@ -22,7 +29,8 @@ class FFmpegWriterStreamRT(FFmpegWriter):
         vid.preset = "ultrafast"
         return vid
 
-    def _init_video_stream(self):
+    def _init_video_stream(self) -> None:
+        assert self.resize is not None
         bitrate_str = f"-b:v {self.bitrate} " if self.bitrate else ""
         rtsp_str = f"-f rtsp" if self.filename.startswith("rtsp://") else ""
         filter_str = (

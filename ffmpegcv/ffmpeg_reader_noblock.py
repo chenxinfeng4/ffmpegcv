@@ -1,15 +1,19 @@
 import multiprocessing
 from multiprocessing import Queue
 import numpy as np
+from typing import Any, Callable, Dict, Optional, Tuple
+
 from .ffmpeg_reader import FFmpegReader
 
 NFRAME = 10
 
 class FFmpegReaderNoblock(FFmpegReader):
+    q: Queue
+
     def __init__(self, 
-                 vcap_fun,
-                 *vcap_args, **vcap_kwargs):
-        vid:FFmpegReader = vcap_fun(*vcap_args, **vcap_kwargs)
+                 vcap_fun: Callable[..., FFmpegReader],
+                 *vcap_args: Any, **vcap_kwargs: Any) -> None:
+        vid: FFmpegReader = vcap_fun(*vcap_args, **vcap_kwargs)
         vid.release()
 
         # work like normal FFmpegReaderObj
@@ -33,7 +37,7 @@ class FFmpegReaderNoblock(FFmpegReader):
         self.has_init = False
         self.process = None
 
-    def read(self):
+    def read(self) -> Tuple[bool, Optional[np.ndarray]]:
         if not self.has_init:
             self.has_init = True
             process = multiprocessing.Process(target=child_process, 
@@ -50,7 +54,13 @@ class FFmpegReaderNoblock(FFmpegReader):
             return True, self.np_array[data_id]
 
 
-def child_process(shared_array, q:Queue, vcap_fun, vcap_args, vcap_kwargs):
+def child_process(
+    shared_array: Any,
+    q: Queue,
+    vcap_fun: Callable[..., FFmpegReader],
+    vcap_args: Tuple[Any, ...],
+    vcap_kwargs: Dict[str, Any],
+) -> None:
     vid = vcap_fun(*vcap_args, **vcap_kwargs)
     np_array = np.frombuffer(shared_array.get_obj(), dtype=np.uint8).reshape((NFRAME,*vid.out_numpy_shape))
     with vid:

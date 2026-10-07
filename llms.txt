@@ -1,0 +1,32 @@
+# ffmpegcv
+
+> ffmpegcv is an OpenCV-compatible, pure-Python video reader/writer backed by the `ffmpeg` CLI. It provides faster and more capable video/camera/stream I/O than cv2, GPU-accelerated encode/decode, ROI crop/resize/pad, low-latency RTSP, background (noblock) I/O, and zero-copy CUDA tensor export. Only `numpy` is required, plus the `ffmpeg` and `ffprobe` binaries on PATH.
+
+Key facts for agents: `ffmpeg` and `ffprobe` are checked at import time; every reader/writer owns a child ffmpeg process and must be released; frames are read-only numpy views; resize dimensions must be even; `len()` works for files only. GPU constructors (`VideoCaptureNV`, `VideoWriterNV`, `VideoCaptureQSV`, `VideoWriterQSV`, `toCUDA`) raise on machines without that hardware.
+
+## Docs
+
+- [AGENTS.md](https://github.com/chenxinfeng4/ffmpegcv/blob/main/AGENTS.md): Agent entry point - hard rules, task recipes, public API map, repo layout, definition of done. Start here.
+- [docs/agents/quickstart.md](https://github.com/chenxinfeng4/ffmpegcv/blob/main/docs/agents/quickstart.md): Copy-paste recipes for reading, writing, copying, ROI, GPU, CUDA, cameras, RTSP streams, noblock and metadata probing.
+- [docs/agents/api-reference.md](https://github.com/chenxinfeng4/ffmpegcv/blob/main/docs/agents/api-reference.md): Exact signatures, defaults, pixel-format/shape table, returned object attributes, reader/writer protocol.
+- [docs/agents/architecture.md](https://github.com/chenxinfeng4/ffmpegcv/blob/main/docs/agents/architecture.md): Module map, exact ffmpeg command templates, filter construction, thread/process model, CUDA kernel path.
+- [docs/agents/troubleshooting.md](https://github.com/chenxinfeng4/ffmpegcv/blob/main/docs/agents/troubleshooting.md): Symptom to cause to fix for install, GPU, shape, writer, camera and stream problems.
+- [docs/agents/testing.md](https://github.com/chenxinfeng4/ffmpegcv/blob/main/docs/agents/testing.md): How to run and extend tests/compat_suite.py, JSON output schema, determinism notes.
+- [README.md](https://github.com/chenxinfeng4/ffmpegcv/blob/main/README.md): Human-facing overview and examples (English).
+- [README_CN.md](https://github.com/chenxinfeng4/ffmpegcv/blob/main/README_CN.md): Human-facing overview and examples (Chinese).
+
+## Source
+
+- [ffmpegcv/__init__.py](https://github.com/chenxinfeng4/ffmpegcv/blob/main/ffmpegcv/__init__.py): Public factories, aliases and the import-time ffmpeg check.
+- [ffmpegcv/ffmpeg_reader.py](https://github.com/chenxinfeng4/ffmpegcv/blob/main/ffmpegcv/ffmpeg_reader.py): `FFmpegReader`, `FFmpegReaderNV`, CPU/GPU filter builders.
+- [ffmpegcv/ffmpeg_writer.py](https://github.com/chenxinfeng4/ffmpegcv/blob/main/ffmpegcv/ffmpeg_writer.py): `FFmpegWriter`, `FFmpegWriterNV`.
+- [ffmpegcv/video_info.py](https://github.com/chenxinfeng4/ffmpegcv/blob/main/ffmpegcv/video_info.py): ffprobe metadata, codec maps, GPU counts, process helpers.
+- [ffmpegcv/ffmpeg_reader_camera.py](https://github.com/chenxinfeng4/ffmpegcv/blob/main/ffmpegcv/ffmpeg_reader_camera.py): Camera reader and device/option queries.
+- [ffmpegcv/ffmpeg_reader_stream_realtime.py](https://github.com/chenxinfeng4/ffmpegcv/blob/main/ffmpegcv/ffmpeg_reader_stream_realtime.py): Low-latency RTSP readers.
+- [ffmpegcv/ffmpeg_reader_cuda.py](https://github.com/chenxinfeng4/ffmpegcv/blob/main/ffmpegcv/ffmpeg_reader_cuda.py): `toCUDA` and the YUV-to-RGB CUDA kernels.
+- [tests/compat_suite.py](https://github.com/chenxinfeng4/ffmpegcv/blob/main/tests/compat_suite.py): Behavioral regression suite; the de-facto contract.
+
+## Optional
+
+- [PyPI package](https://pypi.org/project/ffmpegcv/): Published releases.
+- [FFMPEGCV-CPP](https://github.com/chenxinfeng4/ffmpegcv-cpp): C++ counterpart.

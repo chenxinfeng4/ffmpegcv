@@ -1,4 +1,6 @@
 import os
+from typing import Optional, Sequence
+
 from ffmpegcv.ffmpeg_reader import FFmpegReader, get_videofilter_cpu, get_outnumpyshape
 from .video_info import (
     get_info,
@@ -8,17 +10,19 @@ from .video_info import (
 
 
 class FFmpegReaderQSV(FFmpegReader):
+    codecQSV: str
+
     @staticmethod
-    def VideoReader(
-        filename,
-        pix_fmt,
-        crop_xywh,
-        resize,
-        resize_keepratio,
-        resize_keepratioalign,
-        infile_options,
-        gpu,
-    ):
+    def VideoReader(  # type: ignore[override]
+        filename: str,
+        pix_fmt: str,
+        crop_xywh: Optional[Sequence[int]],
+        resize: Optional[Sequence[int]],
+        resize_keepratio: bool,
+        resize_keepratioalign: Optional[str],
+        infile_options: Optional[str],
+        gpu: Optional[int],
+    ) -> "FFmpegReaderQSV":
         """
         TODO: 1. only 1 gpu is recognized
         TODO: 2. 'crop_xywh', 'resize*' are not supported yet

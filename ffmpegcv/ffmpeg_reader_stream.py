@@ -1,5 +1,7 @@
 from .video_info import run_async
 from queue import Queue
+from typing import Optional, Sequence
+
 from ffmpegcv.stream_info import get_info
 from ffmpegcv.ffmpeg_reader_camera import FFmpegReaderCAM, ProducerThread
 from ffmpegcv.ffmpeg_reader import (
@@ -12,21 +14,28 @@ from ffmpegcv.ffmpeg_reader import (
 
 
 class FFmpegReaderStream(FFmpegReaderCAM):
-    def __init__(self):
+    # set by the `VideoReader` factory (unlike a plain camera)
+    fps: float
+    codec: str
+    count: Optional[int]
+    duration: Optional[float]
+    isopened: bool
+
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
-    def VideoReader(
-        stream_url,
-        codec,
-        pix_fmt,
-        crop_xywh,
-        resize,
-        resize_keepratio,
-        resize_keepratioalign,
-        infile_options,
-        timeout,
-    ):
+    def VideoReader(  # type: ignore[override]
+        stream_url: str,
+        codec: Optional[str],
+        pix_fmt: str,
+        crop_xywh: Optional[Sequence[int]],
+        resize: Optional[Sequence[int]],
+        resize_keepratio: bool,
+        resize_keepratioalign: Optional[str],
+        infile_options: Optional[str],
+        timeout: Optional[float],
+    ) -> "FFmpegReaderStream":
 
         vid = FFmpegReaderStream()
         videoinfo = get_info(stream_url, timeout)
@@ -75,22 +84,30 @@ class FFmpegReaderStream(FFmpegReaderCAM):
 
 
 class FFmpegReaderStreamNV(FFmpegReaderCAM):
-    def __init__(self):
+    # set by the `VideoReader` factory (unlike a plain camera)
+    fps: float
+    codec: str
+    count: Optional[int]
+    duration: Optional[float]
+    isopened: bool
+    codecNV: str
+
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
-    def VideoReader(
-        stream_url,
-        codec,
-        pix_fmt,
-        crop_xywh,
-        resize,
-        resize_keepratio,
-        resize_keepratioalign,
-        infile_options,
-        gpu,
-        timeout,
-    ):
+    def VideoReader(  # type: ignore[override]
+        stream_url: str,
+        codec: Optional[str],
+        pix_fmt: str,
+        crop_xywh: Optional[Sequence[int]],
+        resize: Optional[Sequence[int]],
+        resize_keepratio: bool,
+        resize_keepratioalign: Optional[str],
+        infile_options: Optional[str],
+        gpu: Optional[int],
+        timeout: Optional[float],
+    ) -> "FFmpegReaderStreamNV":
         numGPU = get_num_NVIDIA_GPUs()
         vid = FFmpegReaderStreamNV()
         videoinfo = get_info(stream_url, timeout)
